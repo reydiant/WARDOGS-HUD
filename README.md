@@ -15,7 +15,7 @@ A live stats HUD for WARDOGS that runs from one HTML file. Open it in Chrome or 
 1. Download `WARDOGS Live HUD v8` and open it in Chrome or Edge.
 2. Enter your SteamID64 (sign in at wardogstracker.gg first so your stats sync).
 3. Press **Start screen capture**, pick the screen your game is on, then draw boxes around the kill feed, team scores and cash display.
-4. Run the game in borderless or windowed mode. Exclusive fullscreen can capture as black.
+4. Run the game in borderless or windowed mode if Exclusive fullscreen captures as black.
 
 ## Privacy
 Screen capture is read in your browser and nothing is uploaded. The HUD only calls the WARDOGS Tracker API for your stats, and the Claude API only if you add a key.
