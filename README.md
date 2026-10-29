@@ -1,4 +1,4 @@
-# WARDOGS HUD
+# WARDOGS OVERWATCH
 
 A live stats HUD for WARDOGS that runs from one HTML file. Open it in Chrome or Edge on a second monitor while you play.
 
