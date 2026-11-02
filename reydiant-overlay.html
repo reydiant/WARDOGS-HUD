@@ -44,10 +44,44 @@ html,body{margin:0;width:1920px;height:1080px;background:transparent;overflow:hi
 @keyframes in{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes glint{0%,88%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+/* live stats plate: fed by the WARDOGS HUD through ?link=<topic> */
+[hidden]{display:none!important}
+.stack{position:absolute;left:32px;top:32px;display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.stack>.plate{position:relative;left:auto;top:auto}
+.slot{position:absolute;display:flex;align-items:stretch;gap:12px}
+.slot.bl{left:32px;bottom:32px}
+.slot.br{right:32px;bottom:32px;flex-direction:row-reverse}
+.slot.tr{right:32px;top:32px;flex-direction:row-reverse}
+.statrow{display:flex;align-items:stretch;gap:12px}
+.slot.br .statrow,.slot.tr .statrow{flex-direction:row-reverse}
+.stats{display:flex;align-items:stretch;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));transition:opacity .5s,transform .5s cubic-bezier(.2,.8,.2,1)}
+.stats.off{opacity:0;transform:translateX(-24px)}
+.stats .body{padding:9px 30px 10px 6px;display:flex;align-items:stretch}
+.cell{display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 16px;min-width:64px}
+.cell+.cell{border-left:1px solid rgba(255,255,255,.14)}
+.cell .k{font:600 12px/1 "OvSemi",sans-serif;letter-spacing:.22em;color:var(--muted);text-transform:uppercase;white-space:nowrap}
+.cell .v{font:900 34px/1 "OvBlack",sans-serif;color:var(--text);letter-spacing:.02em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cell .v.acc{color:var(--accent)}
+.cell.hot .v{color:var(--accent);text-shadow:0 0 14px rgba(242,183,5,.55)}
+.cell .v.bump{animation:bump .5s cubic-bezier(.2,.8,.2,1)}
+.pop{display:flex;align-items:stretch;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45));opacity:0;transform:translateX(-30px);pointer-events:none}
+.pop.show{animation:popin .45s cubic-bezier(.2,.8,.2,1) forwards}
+.pop.hide{animation:popout .4s ease-in forwards}
+.pop .pb{display:flex;flex-direction:column;justify-content:center;gap:6px;padding:10px 34px 10px 18px;background:var(--accent);color:#14110a;
+  clip-path:polygon(0 0,100% 0,100% calc(100% - 18px),calc(100% - 18px) 100%,0 100%)}
+.pop .pt{font:900 30px/1 "OvBlack",sans-serif;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.pop .ps{font:600 12px/1 "OvSemi",sans-serif;letter-spacing:.22em;text-transform:uppercase;white-space:nowrap;opacity:.8}
+.pop.dark .pb{background:var(--plate);color:var(--text)}
+.pop.dark .ps{color:var(--muted);opacity:1}
+@keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.22)}100%{transform:scale(1)}}
+@keyframes popin{from{opacity:0;transform:translateX(-30px)}to{opacity:1;transform:none}}
+@keyframes popout{from{opacity:1;transform:none}to{opacity:0;transform:translateX(-30px)}}
 .static *,.static{animation:none!important}
+.static .pop.show{opacity:1;transform:none}
 .static .glint{display:none}
 </style></head>
 <body>
+<div class="stack" id="stack">
 <div class="plate">
   <div class="bar"></div>
   <div class="body">
@@ -56,5 +90,96 @@ html,body{margin:0;width:1920px;height:1080px;background:transparent;overflow:hi
     <div class="sub"><span class="dot"></span><span class="live">Live</span><span class="sep"></span><span>twitch.tv/reydiant</span></div>
   </div>
 </div>
-<script>if(location.hash==="#static")document.body.classList.add("static")</script>
+<div class="statrow" id="statrow">
+  <div class="stats off" id="stats" hidden>
+    <div class="bar"></div>
+    <div class="body">
+      <div class="cell"><span class="k">K/D</span><span class="v acc" id="vKd">—</span></div>
+      <div class="cell"><span class="k">Kills</span><span class="v" id="vK">0</span></div>
+      <div class="cell"><span class="k">Deaths</span><span class="v" id="vD">0</span></div>
+      <div class="cell" id="cSt"><span class="k">Streak</span><span class="v" id="vSt">0</span></div>
+      <div class="cell"><span class="k">HS</span><span class="v" id="vHs">—</span></div>
+      <div class="cell" id="cWl" hidden><span class="k">W–L</span><span class="v" id="vWl">0–0</span></div>
+    </div>
+  </div>
+  <div class="pop" id="pop"><div class="pb"><span class="pt" id="popT"></span><span class="ps" id="popS"></span></div></div>
+</div>
+</div>
+<script>
+if(location.hash==="#static")document.body.classList.add("static");
+/* Live session stats from the WARDOGS HUD. Add ?link=<topic> (copied from HUD Settings > Stream overlay).
+   Optional &pos=bl | br | tr moves the stats from under the name plate to a corner. Without ?link this is just the name plate. */
+(function(){
+  "use strict";
+  var q=new URLSearchParams(location.search), topic=q.get("link")||"";
+  if(!/^[A-Za-z0-9_-]{1,64}$/.test(topic))return;
+  var relay=q.get("relay")||"https://ntfy.sh/";
+  if(!/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/)/.test(relay))relay="https://ntfy.sh/";
+  if(relay.slice(-1)!=="/")relay+="/";
+  var $=function(id){return document.getElementById(id)};
+  var pos=q.get("pos"), row=$("statrow");
+  if(pos==="bl"||pos==="br"||pos==="tr"){var slot=document.createElement("div");slot.className="slot "+pos;document.body.appendChild(slot);slot.appendChild(row);}
+  var STALE=16*60*1000, POP_MS=4200, last=null, seenAt=0, popT=0, popTimer=0, es=null, msgAt=0;
+  var MULTI=function(n){return n===2?"Double kill":n===3?"Triple kill":n===4?"Quad kill":n+"x multi-kill"};
+  function set(id,v){var el=$(id),s=String(v);if(el.textContent!==s){var bump=el.textContent!==""&&el.textContent!=="—"&&last;el.textContent=s;if(bump){el.classList.remove("bump");void el.offsetWidth;el.classList.add("bump");}}}
+  function show(p){
+    var kd=p.d?(p.k/p.d):(p.k?p.k:null);
+    set("vKd",kd==null?"—":kd.toFixed(2));
+    set("vK",p.k);set("vD",p.d);set("vSt",p.st);
+    set("vHs",p.k?Math.round(p.hs/p.k*100)+"%":"—");
+    $("cSt").classList.toggle("hot",p.st>=3);
+    var wl=(p.w||0)+(p.l||0)>0;$("cWl").hidden=!wl;if(wl)set("vWl",(p.w||0)+"–"+(p.l||0));
+  }
+  function visible(){
+    var st=$("stats"), on=!!last&&Date.now()-seenAt<STALE&&(last.on||last.k+last.d>0);
+    if(on){st.hidden=false;requestAnimationFrame(function(){st.classList.remove("off")});}
+    else{st.classList.add("off");setTimeout(function(){if(st.classList.contains("off"))st.hidden=true},600);}
+  }
+  function pop(e){
+    var t,s=[],dark=false;
+    if(e.y==="k"){
+      t=e.c>1?MULTI(e.c):e.hs?"Headshot":"Kill";
+      if(e.hs&&e.c>1)s.push("Headshot");
+      if(e.s>=2)s.push("Streak "+e.s);
+      if(e.m)s.push(e.m+" m");
+    }else{
+      if(!(e.s>=5))return;
+      t="Streak ended";s.push(e.s+" kills");dark=true;
+    }
+    var el=$("pop");
+    $("popT").textContent=t;$("popS").textContent=s.join(" · ");$("popS").hidden=!s.length;
+    clearTimeout(popTimer);
+    el.className="pop"+(dark?" dark":"");void el.offsetWidth;el.classList.add("show");
+    popTimer=setTimeout(function(){el.classList.remove("show");el.classList.add("hide")},POP_MS);
+  }
+  function onData(p){
+    if(!p||p.v!==1)return;
+    var fresh=p.t&&Date.now()-p.t<STALE;
+    if(!fresh&&!last)return;
+    if(last&&p.t&&last.t&&p.t<last.t)return;            // an older message arriving late
+    var first=!last;
+    show(p);last=p;seenAt=p.t?Math.min(Date.now(),p.t):Date.now();visible();
+    var e=p.last;
+    if(e&&e.t>popT){
+      var age=Date.now()-e.t;
+      popT=e.t;
+      if(!(first&&age>15000)&&age<20000)pop(e);         // don't replay an old kill when the overlay (re)loads
+    }
+  }
+  function connect(){
+    try{if(es)es.close();}catch(x){}
+    msgAt=Date.now();
+    es=new EventSource(relay+encodeURIComponent(topic)+"/sse?since=latest");
+    es.onmessage=function(m){msgAt=Date.now();try{var d=JSON.parse(m.data);if(d.event&&d.event!=="message")return;onData(JSON.parse(d.message));}catch(x){}};
+    es.addEventListener("open",function(){msgAt=Date.now()});
+    es.addEventListener("keepalive",function(){msgAt=Date.now()});
+    es.onerror=function(){if(es.readyState===2)setTimeout(connect,15000);};
+  }
+  connect();
+  setInterval(function(){
+    visible();
+    if(Date.now()-msgAt>150000)connect();               // the relay sends a keepalive every ~45 s; reconnect if it went quiet
+  },30000);
+})();
+</script>
 </body></html>
