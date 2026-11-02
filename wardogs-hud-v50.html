@@ -765,7 +765,8 @@ function loadProfileState(){
   S.knownUnl = store.get(key('known'), null);
   S.past = store.get(key('past'), []);
   S.kdh = store.get(key('kdh'), null);                      // every finished session, kept for day/week/month K/D
-  if (!Array.isArray(S.kdh)) { S.kdh = (S.past || []).map(toRec).filter(r => r.k + r.d > 0); if (!S.demo) store.set(key('kdh'), S.kdh); }
+  // v51: only save the rebuilt list when it has something in it, so a storage read that comes back empty can never wipe saved history
+  if (!Array.isArray(S.kdh)) { S.kdh = (S.past || []).map(toRec).filter(r => r.k + r.d > 0); if (!S.demo && S.kdh.length) store.set(key('kdh'), S.kdh); }
   S.riv = store.get(key('riv'), {});
   S.kl = store.get(key('kl'), []); if (!Array.isArray(S.kl)) S.kl = [];
   S.std = store.get(key('std'), null);   // kills and deaths of the last two weeks, for Shorts made from a recording
@@ -4355,7 +4356,9 @@ function renderHistory(){
   const recs = allRecs(), tot = totalOf(recs);
   $('histTag').textContent = tot.n ? 'lifetime K/D ' + fmtKD(tot.kd) + ', ' + tot.n + ' session' + (tot.n > 1 ? 's' : '') + ', ' + tot.days.size + ' day' + (tot.days.size > 1 ? 's' : '') : '';
   if (!tot.n && !recs.some(r => r.cn != null)) {
-    body.innerHTML = '<div class="empty">Your K/D by day, week and month builds here. Every session is saved on this PC when it ends (press <kbd>N</kbd> to end one, or it rolls over after 10 hours). Turn on the kill feed reader and play to start the record.</div>' + winsBlock(m);
+    body.innerHTML = '<div class="empty">Your K/D by day, week and month builds here. Every session is saved on this PC when it ends (press <kbd>N</kbd> to end one, or it rolls over after 10 hours). Turn on the kill feed reader and play to start the record.</div>'
+      // v51: restoring is most needed when the history is empty (a new copy of the HUD, a new browser), so the button shows here too
+      + '<div class="acts" style="display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem"><button class="btn" data-act="import">Restore backup</button></div>' + winsBlock(m);
     return;
   }
   const goal = S.cfg && S.cfg.goalKD || null, sum = histSummary(recs);
