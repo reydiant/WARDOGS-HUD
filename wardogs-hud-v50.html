@@ -935,7 +935,7 @@ async function tick(){
     }
   } finally {
     S.busy = false;
-    render();
+    renderSoon();
     schedule();
   }
 }
@@ -1528,10 +1528,13 @@ const PERFS = {
 const PERF = () => PERFS[(S.cfg && S.cfg.perf) || 'balanced'] || PERFS.balanced;
 // highlight clips need smooth 30 fps video; without them the reader needs only a few frames a second
 const capFps = () => hlOn() ? 30 : PERF().fps;
+// v51: the reader doesn't need your full 1440p picture. Capturing at 1600x900 makes every frame the HUD looks at less than half the size
+// (the browser scales it down on the graphics card). Clips still get the full picture.
+const capSize = () => hlOn() ? {} : {width:{max:1600}, height:{max:900}};
 function applyPerf(){
   // saving Settings used to drop a running capture to the reader's rate even while clips were recording, which made clips choppy
   const tr = CAP.stream && CAP.stream.getVideoTracks()[0];
-  if (tr && tr.applyConstraints) tr.applyConstraints({frameRate:{ideal:capFps(), max:capFps()}}).catch(() => {});
+  if (tr && tr.applyConstraints) tr.applyConstraints(Object.assign({frameRate:{ideal:capFps(), max:capFps()}}, capSize())).catch(() => {});
 }
 const MULTI = n => n === 2 ? 'Double kill' : n === 3 ? 'Triple kill' : n === 4 ? 'Quad kill' : n + 'x multi-kill';
 
@@ -1591,7 +1594,7 @@ function sideJob(){
   }
   return false;
 }
-setInterval(() => { if (CAP.on && CAP.worker2 && CAP.video && CAP.video.videoWidth) sideJob(); }, 250);   // v33: the small boxes' own clock
+setInterval(() => { if (CAP.on && CAP.worker2 && CAP.video && CAP.video.videoWidth) sideJob(); }, 500);   // v33: the small boxes' own clock (v51: 250 -> 500 ms, fewer frame copies)
 function readerStatText(){ return CAP.reads + ' reads, ' + Math.round(CAP.ocrMs) + ' ms' + (CAP.sideMs ? ', boxes ' + Math.round(CAP.sideMs) + ' ms' : ''); }
 function noteSide(t0){ CAP.sideMs = performance.now() - t0; const rs = $('readerStat'); if (rs) rs.textContent = readerStatText(); }
 async function startCapture(){
@@ -1603,7 +1606,7 @@ async function startCapture(){
     // highlight clips need smooth video (30 fps) and, if wanted, the game's sound; the kill feed reader works the same either way
     const fps = capFps(), wantAudio = hlOn() && CAP.cfg.clipAudio !== 'off';
     // systemAudio/windowAudio ask Chrome to offer "Also share system audio" in the picker (browsers that don't know them ignore them)
-    CAP.stream = await navigator.mediaDevices.getDisplayMedia(Object.assign({video:{frameRate:{ideal:fps, max:fps}}, audio:wantAudio},
+    CAP.stream = await navigator.mediaDevices.getDisplayMedia(Object.assign({video:Object.assign({frameRate:{ideal:fps, max:fps}}, capSize()), audio:wantAudio},
       wantAudio ? {systemAudio:'include', windowAudio:'system', selfBrowserSurface:'exclude'} : {}));
   } catch (e) {
     CAP.err = e && e.name === 'NotAllowedError' ? 'Screen sharing was cancelled. Press Start screen capture and pick the screen your game is on.' : 'Could not start screen capture (' + (e && e.name) + ').';
@@ -2093,7 +2096,7 @@ function onCashRead(r){
       C.log.push({t:now, k:x.name, c:-x.cash}); if (C.log.length > 400) C.log.shift();
       const rec = {t:now, name:x.name, cash:x.cash}; (CAP.fineRecent || (CAP.fineRecent = [])).push(rec);
       if (isTeamKillFine(x.name)) (CAP.tkf || (CAP.tkf = [])).push(rec);
-      saveProfileState(); render();
+      saveProfileState(); renderSoon();
     });
     // a later read checked against the boxed total fixes the amounts booked from a blurrier one a moment ago
     const F = C.fines;
@@ -2150,7 +2153,7 @@ function onCashRead(r){
       tiltCheck();
       const wh = C.wh || (C.wh = []); wh.push({t:now, w:C.w, e:C.earned, s:C.spent, w0:C.w0});
       while (wh.length > 40 || (wh.length && now - wh[0].t > 120000)) wh.shift();
-      saveProfileState(); render();
+      saveProfileState(); renderSoon();
     }
     CAP.cashPrevNeg = r.net != null ? r.net < 0 : null;
   }
@@ -2299,7 +2302,7 @@ function reconcileKills(){
     const fe = evs.find(e => near(e) && e.team);
     if (fe) { fe._tf = 1; continue; }
     const wrong = evs.find(e => near(e) && !e.team && !e._rk && e.src !== 'reward' && !K.some(k => !k.done && Math.abs(k.t - e.t) < 9000));
-    if (wrong) { wrong._tf = 1; wrong.team = true; recomputeLive(L); ev('spend', 'Team kill: ' + wrong.p + ' was a teammate (the game fined you ' + money(r.cash || 0) + ')'); saveProfileState(); render(); continue; }
+    if (wrong) { wrong._tf = 1; wrong.team = true; recomputeLive(L); ev('spend', 'Team kill: ' + wrong.p + ' was a teammate (the game fined you ' + money(r.cash || 0) + ')'); saveProfileState(); renderSoon(); continue; }
     addFineTeamKill(r);
   }
   CAP.tkf = F.filter(r => now - r.t < 60000);
@@ -2592,7 +2595,7 @@ function onScores(sc){
     }
     CAP.match = M = {start:now, s:Object.assign({}, sc), h:[{t:now, s:Object.assign({}, sc)}], done:false, warned:false};
     if (!fresh || !twice) { /* first sight mid-match is fine */ }
-    render(); return;
+    renderSoon(); return;
   }
   // accept small climbs at once, anything else (a drop or a big jump) only when read twice in a row
   const ok = TEAMS.every(c => sc[c] >= M.s[c] && sc[c] - M.s[c] <= 6);
@@ -2615,7 +2618,7 @@ function onScores(sc){
     const mine = myTeamColor(), msg = teamName(lead) + ' team is at ' + M.s[lead] + (mine ? (lead === mine ? ', your team is about to win' : ', your team needs to stop them') : ', about to win');
     ev('sys', msg); toast('kill', 'Match point', msg);
   }
-  if (changed) render();
+  if (changed) renderSoon();
 }
 // points per minute over the last two minutes, and how long until each team reaches 100 at that pace
 function matchPace(M){
@@ -2792,12 +2795,12 @@ function findScoreboardRow(){
 setInterval(() => {
   if (!CAP.on || !CAP.video || !CAP.video.videoWidth) return;
   const now = Date.now(), open = now - (CAP.sbSeen || 0) < 2500;
-  if (now - (CAP.sbLook || 0) < (open ? 300 : PERF() === PERFS.low ? 700 : 450)) return;
+  if (now - (CAP.sbLook || 0) < (open ? 500 : PERF() === PERFS.low ? 2000 : 1500)) return;   // v51: was 300/700/450 ms; each look copies a big frame off the GPU
   CAP.sbLook = now;
   let band = null; try { band = findScoreboardRow(); } catch (e) {}
   const dg = CAP.sbDiag; if (dg) { const b = CAP.sbBest; if (!b || now - b.t > 20000 || dg.lines + (dg.fill || 0) >= b.lines + (b.fill || 0)) CAP.sbBest = Object.assign({}, dg, {found:!!band}); }
   if (band) { CAP.sbBand = band; CAP.sbBandAt = now; if (band.how === 'outline') CAP.sbSeen = now; CAP.sbFound = now; }
-}, 150);
+}, 250);
 /* ---------- v41: the downed screen (GIVE UP / CALL FOR HELP, damage log on the right) ----------
    When you go down, the screen goes black at the top with a red glow at the bottom and the kill feed fades, so the feed line
    for your death is often missed. This watches for that screen, reads the damage log for who did the most damage, and when the
@@ -2884,11 +2887,11 @@ async function readDowned(){
       }
       const t = await readRegion(DN_HP, '7', 110), nums = (t.match(/\d+/g) || []).map(Number), hp = nums.length ? nums[nums.length - 1] : null;
       CAP.downText = 'after: ' + esc.replace(/\s+/g, ' ').trim() + ' | ' + t.trim();
-      if (/%/.test(t) && hp > 0 && hp <= 100) { markRevived(); ev('sys', 'Back up, you were revived, no death counted'); CAP.down = null; render(); return; }
+      if (/%/.test(t) && hp > 0 && hp <= 100) { markRevived(); ev('sys', 'Back up, you were revived, no death counted'); CAP.down = null; renderSoon(); return; }
       if (++D.after >= 8) {
         if (!D.fed) ev('sys', 'Downed screen ended without a respawn or deploy screen, so no death was counted (revived).');
         markRevived();
-        CAP.down = null; render();
+        CAP.down = null; renderSoon();
       }
     }
   } catch (e) {
@@ -2904,7 +2907,7 @@ setInterval(() => {
   else if (D && !D.end && D.conf && CAP.dnOff >= 3) { D.end = now; D.want = now + 600; }
   else if (D && D.end && CAP.dnRun >= 2) { D.end = null; D.after = 0; }          // back on the downed screen (a flicker)
   else if (D && !D.conf && now - D.t > 8000) CAP.down = null;
-}, 500);
+}, 1000);   // v51: was 500 ms
 /* ---------- v47: the respawn and deploy screens ----------
    Measured on your recording: "RESPAWNING IN 4…" is a black screen with small white text in the middle (right after you bleed out
    or give up); "WAITING TO DEPLOY… 6", "// DEPLOYING…" and "// SELECT FACTION" are near-black screens with text in the middle.
@@ -2959,7 +2962,7 @@ setInterval(() => {
       const lf = lifeCur(); lf.deployAt = now; ev('sys', 'Deployed, life ' + lf.n + ', money this life starts at $0'); saveProfileState(); render();
     }
   }
-}, 700);
+}, 1000);   // v51: was 700 ms
 // what the scoreboard reader last did, for Show reader
 function sbLine(){
   const now = Date.now();
@@ -3046,7 +3049,7 @@ function onScoreboard(v){
   // v35: same kills/assists/deaths/revives and a cash value that is the earlier one minus its first digit ($5,150 -> $150):
   // the earlier read took the "$" for a 5. Fix that read instead of starting a "new match".
   const fixDigit = m && v.k === m.k && v.a === m.a && v.d === m.d && v.r === m.r && v.cash < m.cash && String(m.cash).length > 1 && String(m.cash).slice(1) === String(v.cash);
-  if (fixDigit) { m.cash = v.cash; m.at = Date.now(); CAP.sbAt = Date.now(); saveProfileState(); render(); return; }
+  if (fixDigit) { m.cash = v.cash; m.at = Date.now(); CAP.sbAt = Date.now(); saveProfileState(); renderSoon(); return; }
   const reset = !m || v.k < m.k || v.d < m.d || v.a < m.a || v.r < m.r || v.cash < m.cash - 50;
   if (reset) {
     m = Object.assign({start:Date.now(), at:Date.now()}, v); sb.matches.push(m);
@@ -3055,7 +3058,7 @@ function onScoreboard(v){
     ['k','a','d','r'].forEach(x => { if (v[x] > m[x]) { const n = v[x] - m[x], w = {k:'kill',a:'assist',d:'death',r:'revive'}[x]; ev(x === 'd' ? 'spend' : x === 'k' ? 'kill' : 'cash', 'Scoreboard: +' + n + ' ' + w + (n > 1 ? 's' : '')); } });
     Object.assign(m, v, {at:Date.now()});
   } else { m.at = Date.now(); }
-  CAP.sbAt = Date.now(); saveProfileState(); render();
+  CAP.sbAt = Date.now(); saveProfileState(); renderSoon();
 }
 function sbTotals(){
   const sb = S.session && S.session.sb; if (!sb || !sb.matches.length) return null;
@@ -3285,7 +3288,7 @@ function skullOnLine(bb){
 function markHeadshot(){
   const L = S.session && S.session.live, now = Date.now(); if (!L) return;
   const k = (L.ev || []).slice().reverse().find(e => e.y === 'k' && !e.team);
-  if (k && now - k.t <= 10000) { if (!k.hs) { k.hs = true; k.hsSrc = 'reward'; const hk = HL.run && HL.run.kills.find(x => x.t === k.t); if (hk) hk.hs = true; saveProfileState(); render(); } return; }
+  if (k && now - k.t <= 10000) { if (!k.hs) { k.hs = true; k.hsSrc = 'reward'; const hk = HL.run && HL.run.kills.find(x => x.t === k.t); if (hk) hk.hs = true; saveProfileState(); renderSoon(); } return; }
   CAP.hsPend = now;
 }
 function toggleHs(i){
@@ -3580,7 +3583,7 @@ function parseFeed(text, ocrLines){
       // the first read caught a cut-off name ("come"), this one has all of it ("come eggwuh"): keep the full name on the counted kill or death
       if (cutShort(seen.other, other) && normName(other).length > normName(seen.other).length) {
         const e = (live().ev || []).slice().reverse().find(x => x.y === type[0] && x.p === seen.other && now - x.t < 15000);
-        if (e) { e.p = other; delete e._k; saveProfileState(); render(); }
+        if (e) { e.p = other; delete e._k; saveProfileState(); renderSoon(); }
         seen.other = other;
       }
       trace(line, 'already counted (still on screen)'); continue;
@@ -3650,23 +3653,23 @@ function onLiveKill(other, raw, team, dist, hs){
   if (!team && CAP.hsPend && now - CAP.hsPend <= 6000) { hs = true; CAP.hsPend = 0; }   // the headshot reward showed before the feed line
   if (team) {
     const fined = (L.ev || []).find(e => e.src === 'fine' && !e._fd && now - e.t < 30000);
-    if (fined) { fined._fd = 1; fined.p = other; fined.raw = raw || ''; saveProfileState(); render(); return; }
+    if (fined) { fined._fd = 1; fined.p = other; fined.raw = raw || ''; saveProfileState(); renderSoon(); return; }
     L.tk = (L.tk || 0) + 1;
     (L.ev || (L.ev = [])).push({t:now, y:'k', p:other, raw:raw || '', team:true}); if (L.ev.length > 3000) L.ev.shift();
     ev('spend', 'Team kill: you killed teammate ' + other);
     toast('tk', 'Team kill', other + ' was on your team');
-    snap('tk', other); saveProfileState(); render();
+    snap('tk', other); saveProfileState(); renderSoon();
     return;
   }
   const auto = (L.ev || []).find(e => e.src === 'reward' && !e._fd && now - e.t < 30000 && (e.p === 'unknown' || sameKey(idKey(e.p), idKey(other))));
-  if (auto) { auto._fd = 1; auto.p = other; auto.raw = raw || ''; if (dist && !auto.m) auto.m = dist; if (hs) auto.hs = true; delete auto._k; saveProfileState(); render(); return; }
+  if (auto) { auto._fd = 1; auto.p = other; auto.raw = raw || ''; if (dist && !auto.m) auto.m = dist; if (hs) auto.hs = true; delete auto._k; saveProfileState(); renderSoon(); return; }
   L.k++; L.streak++; L.best = Math.max(L.best, L.streak);
   L.chain = now - L.lastKill < 6000 ? L.chain + 1 : 1; L.multi = Math.max(L.multi, L.chain); L.lastKill = now;
   (L.ev || (L.ev = [])).push({t:now, y:'k', p:other, raw:raw || '', m:dist || undefined, hs:hs || undefined}); if (L.ev.length > 3000) L.ev.shift();
   hlKill(L.ev[L.ev.length - 1], L);
   ev('kill', (hs ? 'Headshot: killed ' : 'Killed ') + other + (dist ? ' at ' + dist + ' m' : '') + (L.chain > 1 ? ', ' + MULTI(L.chain) : '') + (L.streak >= 3 ? ', streak ' + L.streak : ''));
   toast('kill', L.chain > 1 ? MULTI(L.chain) + (hs ? ', headshot' : '') : hs ? 'Headshot' : 'Kill', other + ', streak ' + L.streak);
-  snap('kill', other, hs); saveProfileState(); render();
+  snap('kill', other, hs); saveProfileState(); renderSoon();
   tiltCheck('k');
 }
 /* ---------- v47: downs, deaths and lives ----------
@@ -3686,11 +3689,11 @@ function onDown(other, raw, team, dist, src){
   const lf = lifeCur(); if (lf) lf.downs = (lf.downs || 0) + 1;
   ev('spend', 'Downed' + (other && other !== 'unknown' && other !== 'no killer named' ? ' by ' + other : '') + (dist ? ' from ' + dist + ' m' : '') + ', not a death unless you respawn');
   toast('death', team ? 'Downed by a teammate' : 'Downed', (other && other !== 'unknown' ? other + ', ' : '') + 'waiting to see if you are revived');
-  saveProfileState(); render();
+  saveProfileState(); renderSoon();
 }
 function markRevived(){
   const L = live(), dn = (L.dn || []).slice().reverse().find(x => !x.revived && !x.dead && Date.now() - x.t < 120000);
-  if (dn) { dn.revived = true; saveProfileState(); render(); }
+  if (dn) { dn.revived = true; saveProfileState(); renderSoon(); }
 }
 // the respawn (or deploy) screen: the latest down that wasn't revived is the death
 function confirmDeath(src){
@@ -3722,7 +3725,7 @@ function endLife(reason, by){
   const C = s.cash;
   s.life = {n:lifeList().length + 1, start:now, deployAt:null, e0:C && C.w0 != null ? C.earned : null, k0:L.k || 0, downs:0};
   if (reason === 'death') ev('spend', 'Life ' + rec.n + ' over: ' + rec.k + ' kill' + (rec.k === 1 ? '' : 's') + ', ' + money(rec.earned) + ' made' + (rec.deployAt ? ', alive ' + mmss(now - rec.deployAt) : '') + '. Money per life starts again at $0.');
-  saveProfileState(); render();
+  saveProfileState(); renderSoon();
 }
 function lifeStats(){
   const L = lifeList(), done = L.filter(x => x.reason === 'death');
@@ -3739,7 +3742,7 @@ function onLiveDeath(other, raw, team, dist, src){
   L.d++;                                                   // v47: team-killed-by is counted when you go down (onDown)
   L.streak = 0; L.chain = 0; L.lastDeath = Date.now(); hlDeath();
   toast(team ? 'tk' : 'death', src === 'self' ? 'Died' : team ? 'Team killed by' : 'Killed by', src === 'self' ? 'no killer named, crash, fall or suicide' : other);
-  snap(team ? 'tkd' : 'death', other); saveProfileState(); render();
+  snap(team ? 'tkd' : 'death', other); saveProfileState(); renderSoon();
   tiltCheck('d');
   checkRoughPatch(L);
   reviewDeath(other, !!team);
@@ -4288,7 +4291,7 @@ function logWin(color, src, res, sc){
   const msg = color ? teamName(color) + ' team won the match' + (r ? ', ' + (r === 'win' ? 'your team won' : 'your team lost') : '') : (r === 'win' ? 'Your team won the match' : 'Your team lost the match');
   ev(r === 'loss' ? 'spend' : 'level', msg + (w.sc ? ', ' + TEAMS.map(c => teamName(c) + ' ' + w.sc[c]).join(', ') : '') + (src === 'auto' ? (w.sc ? ' (read from the score box)' : ' (read from the end screen)') : ''));
   toast('kill', 'Match result saved', msg);
-  render();
+  renderSoon();
 }
 function winsOf(){ return (S.wins || []).filter(x => x && isFinite(+x.t)); }
 function winTotals(list){
@@ -5109,6 +5112,13 @@ function setPill(id, cls, text){ const el = $(id); el.innerHTML = (cls != null ?
 function txt(id, v, cls){ const el = $(id); el.textContent = v; if (cls !== undefined) el.className = el.className.replace(/\b(good|bad|acc)\b/g, '').trim() + (cls ? ' ' + cls : ''); }
 const tone = v => v > 0 ? 'good' : v < 0 ? 'bad' : '';
 
+// v51: the screen reader calls for a redraw many times a second; rebuilding the panels that often made the HUD laggy and jumpy.
+// Reader updates now share one redraw at most every 400 ms. Clicks still redraw right away.
+function renderSoon(){
+  if (renderSoon.t) return;
+  const wait = Math.max(0, 400 - (performance.now() - (renderSoon.last || 0)));
+  renderSoon.t = setTimeout(() => { renderSoon.t = null; renderSoon.last = performance.now(); render(); }, wait);
+}
 function render(){
   try { paintLifeStrip(); } catch (e) {}
   setTimeout(() => obsPush(false), 0);
