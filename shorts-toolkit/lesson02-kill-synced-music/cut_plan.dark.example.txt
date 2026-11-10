@@ -1,0 +1,15 @@
+BPM 102.0. Kills should land on the 16th-note grid (147 ms apart).
+shift = how far the kill must move to hit the grid (+ later, - earlier).
+gap change = what to add (+) or trim (-) from the footage right before this kill,
+after the earlier kills have already been moved.
+
+kill   time s   grid s  shift ms  gap change ms
+   1    0.000    0.000        +0             +0
+   2    2.600    2.647       +47            +47
+   3    4.100    4.118       +18            -29
+   4    5.000    5.000        +0            -18
+   5    7.200    7.206        +6             +6
+   6    8.400    8.382       -18            -24
+   7   10.300   10.294        -6            +12
+
+Worst miss with no edits: 47 ms. About 40 ms is 2 to 3 frames at 60 fps.
