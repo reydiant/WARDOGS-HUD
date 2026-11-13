@@ -26,6 +26,7 @@ Only JSON, no other text, no code fences:
 
 1. Every number you write must come from the facts block. Never round up, never invent, never guess.
    Spelled-out numbers count too: "thirty five grand" is checked the same as "$35,000".
+   Write money with a dollar sign and a comma: $35,000, not 35000. Distances are like 106m.
 2. Titles put a number in the first four words and tell a story: "Started with $0... ended with $81,090 in kills".
    70 characters or fewer.
 3. The description is 1 or 2 lines and names one specific highlight from the facts (what happened, how
@@ -36,6 +37,13 @@ Only JSON, no other text, no code fences:
    the video. Ask them to pick between two highlights or to argue a call. Never ask for a count or total.
 7. Captions are 1 to 3 words. They are text on the screen of a phone.
 8. Use the hook format named in the facts block. Do not switch formats.
+
+# Style examples (format only: the numbers are placeholders, use only your own facts)
+
+Titles: "Started with $0... ended with $X in kills" or "$X in N kills. One life."
+Descriptions: "A 106m parachuter shot paid $4,500." (a full sentence, with the dollar sign and comma)
+Captions: "ONE LIFE", "$X IN KILLS", "106m SHOT"
+Pinned comment: "Parachuter or rooftop ledge: which kill was better?"
 
 # Voice
 

@@ -121,8 +121,12 @@ def check(draft, f):
     bad = {}
     ok_nums = allowed_numbers(f)
 
+    def money_format(text):
+        """Numbers of 1,000 or more must be written like $35,000 (dollar sign, comma)."""
+        return [m for m in re.findall(r"(?<![\d,$])\d{4,}(?![\d,])|(?<![\d,])\$\d{4,}(?![\d,])", text)]
+
     def num_problems(text):
-        return [n for n in numbers_in(text) if n.rstrip(",") not in ok_nums and n.replace(",", "") not in {x.replace(",", "") for x in ok_nums}]
+        return money_format(text) and [f"write {n} like ${int(n.replace('$','')):,}" for n in money_format(text)] or [n for n in numbers_in(text) if n.rstrip(",") not in ok_nums and n.replace(",", "") not in {x.replace(",", "") for x in ok_nums}]
 
     titles = draft.get("titles") or []
     if not titles:
