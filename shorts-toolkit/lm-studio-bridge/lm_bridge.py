@@ -234,10 +234,11 @@ def main():
     if draft is None:
         sys.exit("The model never returned usable JSON.")
 
-    out = {"hook_format": hook, "facts": f, "passed_titles": titles, "description": draft.get("description"),
+    out = {"model": model, "tries_used": min(i + 1, a.tries) if draft is not None else 0, "hook_format": hook, "facts": f, "passed_titles": titles, "description": draft.get("description"),
            "pinned_comment": draft.get("pinned_comment"), "captions": draft.get("captions"),
            "failed_checks": bad}
-    path = os.path.splitext(a.events)[0] + ".text.json"
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "_", model)          # one output file per model, so runs can be compared
+    path = os.path.splitext(a.events)[0] + "." + safe + ".text.json"
     json.dump(out, open(path, "w", encoding="utf-8"), indent=2)
     print(f"\nSTATUS: {'ALL CHECKS PASSED' if not bad else 'SOME CHECKS FAILED - fix by hand or rerun'}")
     for t in titles:
