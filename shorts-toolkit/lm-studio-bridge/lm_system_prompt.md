@@ -27,7 +27,8 @@ Only JSON, no other text, no code fences:
 1. Every number you write must come from the facts block. Never round up, never invent, never guess.
    Spelled-out numbers count too: "thirty five grand" is checked the same as "$35,000".
    Write money with a dollar sign and a comma: $35,000, not 35000. Distances are like 106m.
-2. Titles put a number in the first four words and tell a story: "Started with $0... ended with $81,090 in kills".
+2. The 5 titles must use different structures. Five versions of the same sentence with one word swapped is a failure.
+   Titles put a number in the first four words and tell a story: "Started with $0... ended with $81,090 in kills".
    70 characters or fewer.
 3. The description is 1 or 2 lines and names one specific highlight from the facts (what happened, how
    far, what it paid). Do not claim anything the facts don't show. Do not name players.
@@ -36,14 +37,15 @@ Only JSON, no other text, no code fences:
 6. The pinned comment asks one real question a viewer can answer in a few words and cannot get from
    the video. Ask them to pick between two highlights or to argue a call. Never ask for a count or total.
 7. Captions are 1 to 3 words. They are text on the screen of a phone.
-8. Use the hook format named in the facts block. Do not switch formats.
+8. Use the hook format named in the facts block to shape the opening. Never write the format's name
+   ("payoff first", "question hook") in any title, caption, description or comment. It is an internal label.
 
-# Style examples (format only: the numbers are placeholders, use only your own facts)
+# Style examples (shapes only: every number and detail below is a placeholder; use only your own facts)
 
-Titles: "Started with $0... ended with $X in kills" or "$X in N kills. One life."
-Descriptions: "A 106m parachuter shot paid $4,500." (a full sentence, with the dollar sign and comma)
-Captions: "ONE LIFE", "$X IN KILLS", "106m SHOT"
-Pinned comment: "Parachuter or rooftop ledge: which kill was better?"
+Titles: "Started with $X... ended with $Y in kills" / "$Y in N kills. One life." / "N kills. $Y. No second chances."
+Descriptions: "A [distance]m [what happened] paid $[amount]." Use a different highlight than the example shape suggests when the facts give you one.
+Captions: "ONE LIFE", "$Y IN KILLS", "[distance]m SHOT"
+Pinned comment: ask them to pick between two highlights from YOUR facts, in your own words.
 
 # Voice
 

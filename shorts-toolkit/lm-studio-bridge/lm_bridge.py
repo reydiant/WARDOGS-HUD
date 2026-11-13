@@ -27,7 +27,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 HOOKS = ["payoff-first", "question", "challenge", "personality", "series"]
 TAGS = "#wardogs #shorts #fps #gaming"
 EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿]")
-BANNED = ("subscribe", "like and", "link in bio", "insane", "epic")
+BANNED = ("subscribe", "like and", "link in bio", "insane", "epic",
+          "payoff first", "payoff-first", "question hook", "hook format", "personality pov", "series entry")
 
 
 def facts_from(path, hook):
