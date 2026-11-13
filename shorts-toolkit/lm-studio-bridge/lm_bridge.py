@@ -126,7 +126,11 @@ def check(draft, f):
         return [m for m in re.findall(r"(?<![\d,$])\d{4,}(?![\d,])|(?<![\d,])\$\d{4,}(?![\d,])", text)]
 
     def num_problems(text):
-        return money_format(text) and [f"write {n} like ${int(n.replace('$','')):,}" for n in money_format(text)] or [n for n in numbers_in(text) if n.rstrip(",") not in ok_nums and n.replace(",", "") not in {x.replace(",", "") for x in ok_nums}]
+        money = money_format(text)
+        if money:
+            return [f"write {n} as ${int(n.replace('$', '')):,} (dollar sign and comma)" for n in money]
+        return [f"number {n} is not in the facts" for n in numbers_in(text)
+                if n.rstrip(",") not in ok_nums and n.replace(",", "") not in {x.replace(",", "") for x in ok_nums}]
 
     titles = draft.get("titles") or []
     if not titles:
@@ -139,7 +143,7 @@ def check(draft, f):
         if not re.search(r"[\$\d]", " ".join(t.split()[:4])) and not (f["series"] and t.startswith(f["series"])):
             why.append("number must be in the first 4 words")
         for n in num_problems(t):
-            why.append(f"number {n} is not in the facts")
+            why.append(f"{n}")
         if EMOJI.search(t):
             why.append("emoji")
         if any(b in t.lower() for b in BANNED):
@@ -154,7 +158,7 @@ def check(draft, f):
     if len(body.splitlines()) > 2 or len(body) < 10:
         d.append("body must be 1 or 2 short lines")
     for n in num_problems(body):
-        d.append(f"number {n} is not in the facts")
+        d.append(f"{n}")
     if re.search(r"\bheadshots?\b", body, re.I) and f["headshot_count"] == 0:
         d.append("mentions headshots but the facts say 0")
     if EMOJI.search(desc) or any(b in desc.lower() for b in BANNED):
@@ -169,7 +173,7 @@ def check(draft, f):
         p.append("over 200 characters")
     if re.search(r"kill count|how many (kills|headshots)|final total|how much|what was the (total|final)", pc, re.I):
         p.append("the video already answers this; ask viewers to pick or argue about a specific kill")
-    p += [f"number {n} is not in the facts" for n in num_problems(pc)]
+    p += [f"{n}" for n in num_problems(pc)]
     if EMOJI.search(pc) or any(b in pc.lower() for b in BANNED):
         p.append("emoji or banned word")
     if p:
@@ -181,7 +185,7 @@ def check(draft, f):
     for cap in caps:
         if not 1 <= len(cap.split()) <= 3:
             c.append(f"'{cap}' is not 1 to 3 words")
-        c += [f"number {n} is not in the facts" for n in num_problems(cap)]
+        c += [f"{n}" for n in num_problems(cap)]
     if c:
         bad["captions"] = c
     return good_titles, bad
