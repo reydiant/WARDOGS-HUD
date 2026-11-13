@@ -14,7 +14,8 @@ Optional keys: "start": 0, "series": "Blood Money #3".
 
 Options:
   --url http://localhost:1234/v1   LM Studio server
-  --model NAME                     default: the first model LM Studio reports
+  --model NAME                     exact name from LM Studio's list. Default: the first chat model it
+                                   reports, which may not be the one you loaded; the script warns
   --hook FORMAT                    payoff-first | question | challenge | personality | series
                                    default: next one in rotation, never the same twice in a row
   --record                         write the chosen hook to hook_log.json (do this after you post)
@@ -213,6 +214,11 @@ def main():
         ids = [m["id"] for m in json.load(urllib.request.urlopen(a.url + "/models", timeout=10))["data"]]
         chat = [i for i in ids if "embed" not in i.lower()]   # embedding models cannot chat
         model = a.model or chat[0]
+        if a.model and a.model not in ids:
+            sys.exit(f"Model '{a.model}' is not in LM Studio's list. Available: {', '.join(ids)}")
+        if not a.model and len(chat) > 1:
+            print(f"WARNING: {len(chat)} chat models are listed ({', '.join(chat)}). Using the first: {model}.\n"
+                  f"         To pick one, run again with --model <name> from that list.")
     except (urllib.error.URLError, KeyError, IndexError) as e:
         sys.exit(f"Can't reach LM Studio at {a.url} ({e}). Start the local server and load a model.")
     print(f"model: {model}   hook: {hook}\nfacts: {json.dumps(f)}")
