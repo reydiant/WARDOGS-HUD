@@ -187,6 +187,8 @@ def check(draft, f):
         if not 1 <= len(cap.split()) <= 3:
             c.append(f"'{cap}' is not 1 to 3 words")
         c += [f"{n}" for n in num_problems(cap)]
+        if EMOJI.search(cap) or any(b in cap.lower() for b in BANNED):
+            c.append(f"'{cap}' is an internal label, an emoji or a banned word")
     if c:
         bad["captions"] = c
     return good_titles, bad
