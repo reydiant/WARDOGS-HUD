@@ -210,7 +210,9 @@ def main():
     f = facts_from(a.events, hook)
     system = open(os.path.join(HERE, "lm_system_prompt.md"), encoding="utf-8").read()
     try:
-        model = a.model or json.load(urllib.request.urlopen(a.url + "/models", timeout=10))["data"][0]["id"]
+        ids = [m["id"] for m in json.load(urllib.request.urlopen(a.url + "/models", timeout=10))["data"]]
+        chat = [i for i in ids if "embed" not in i.lower()]   # embedding models cannot chat
+        model = a.model or chat[0]
     except (urllib.error.URLError, KeyError, IndexError) as e:
         sys.exit(f"Can't reach LM Studio at {a.url} ({e}). Start the local server and load a model.")
     print(f"model: {model}   hook: {hook}\nfacts: {json.dumps(f)}")
