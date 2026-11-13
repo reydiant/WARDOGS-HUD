@@ -42,6 +42,9 @@ def facts_from(path, hook):
         "headshot_count": head,
         "biggest_kill_amount": big["amount"],
         "biggest_kill_was_headshot": bool(big.get("headshot")),
+        "longest_shot_m": max([e["dist_m"] for e in ev if e.get("dist_m")] or [None]),
+        "highlights": [{"what": e["note"], "distance_m": e.get("dist_m"), "headshot": bool(e.get("headshot")),
+                        "reward": e["amount"]} for e in ev if e.get("note")],
         "hook_format": hook,
         "series": cfg.get("series"),
     }
@@ -64,7 +67,10 @@ def next_hook(requested):
 
 def allowed_numbers(f):
     vals = {f["start_amount"], f["final_total"], f["kill_count"], f["headshot_count"],
-            f["biggest_kill_amount"]}
+            f["biggest_kill_amount"], f.get("longest_shot_m")}
+    for h in f.get("highlights", []):
+        vals.update([h.get("distance_m"), h.get("reward")])
+    vals.discard(None)
     out = set()
     for v in vals:
         out.add(str(v))
@@ -74,8 +80,39 @@ def allowed_numbers(f):
     return out
 
 
+UNITS = {w: i for i, w in enumerate("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen".split())}
+TENS = {w: 10 * (i + 2) for i, w in enumerate("twenty thirty forty fifty sixty seventy eighty ninety".split())}
+MULT = {"hundred": 100, "thousand": 1000, "grand": 1000}
+COUNTED = ("headshot", "headshots", "kill", "kills", "shot", "shots")
+
+
+def spelled_numbers(text):
+    """Number words as digit strings, e.g. 'thirty five grand' -> '35000'. Bare 'one' is ignored
+    unless it counts something ('one headshot'), so 'one life' is not flagged."""
+    toks = re.findall(r"[a-z]+", text.lower())
+    out, i = [], 0
+    while i < len(toks):
+        w = toks[i]
+        if w in UNITS or w in TENS:
+            if w == "one" and (i + 1 >= len(toks) or toks[i + 1] not in COUNTED):
+                i += 1
+                continue
+            val = 0
+            while i < len(toks) and (toks[i] in UNITS or toks[i] in TENS):
+                val += UNITS.get(toks[i], 0) + TENS.get(toks[i], 0)
+                i += 1
+            if i < len(toks) and toks[i] in MULT:
+                val *= MULT[toks[i]]
+                i += 1
+            out.append(str(val))
+        else:
+            i += 1
+    return out
+
+
 def numbers_in(text):
-    return [n.replace("$", "") for n in re.findall(r"\$?\d[\d,]*(?:\.\d+)?", text)]
+    digits = [n.replace("$", "") for n in re.findall(r"\$?\d[\d,]*(?:\.\d+)?", text)]
+    return digits + spelled_numbers(text)
 
 
 def check(draft, f):
@@ -84,7 +121,7 @@ def check(draft, f):
     ok_nums = allowed_numbers(f)
 
     def num_problems(text):
-        return [n for n in numbers_in(text) if n.rstrip(",") not in ok_nums]
+        return [n for n in numbers_in(text) if n.rstrip(",") not in ok_nums and n.replace(",", "") not in {x.replace(",", "") for x in ok_nums}]
 
     titles = draft.get("titles") or []
     if not titles:
@@ -125,6 +162,8 @@ def check(draft, f):
         p.append("must end with a question")
     if len(pc) > 200:
         p.append("over 200 characters")
+    if re.search(r"kill count|how many (kills|headshots)|final total|how much|what was the (total|final)", pc, re.I):
+        p.append("the video already answers this; ask viewers to pick or argue about a specific kill")
     p += [f"number {n} is not in the facts" for n in num_problems(pc)]
     if EMOJI.search(pc) or any(b in pc.lower() for b in BANNED):
         p.append("emoji or banned word")

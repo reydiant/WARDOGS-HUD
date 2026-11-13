@@ -14,14 +14,14 @@ asks the model to fix only what failed.
 3. Read `events.text.json`. Only titles listed under `passed_titles` passed.
 4. After you post, run again with `--record` so the hook rotation remembers what you used.
 
-Same `events.json` as lesson 1. Keep `lm_system_prompt.md` next to the script.
+Same `events.json` as lesson 1. Add an optional `"note"` and `"dist_m"` to a kill to give the model something specific to write about. Keep `lm_system_prompt.md` next to the script.
 
 ## What the code checks
 
-- Every number is in the facts block (start, total, kills, headshots, biggest kill).
+- Every number is in the facts block (start, total, kills, headshots, biggest kill, distances), including spelled-out ones.
 - Title: a number in the first four words ("Started with $0... ended with $81,090" passes), 70 characters or fewer, no emoji.
 - Description: 1 or 2 lines, ends with `#wardogs #shorts #fps #gaming`, no headshot claim if the count is 0.
-- Pinned comment: one question, 200 characters or fewer.
+- Pinned comment: one question, 200 characters or fewer, and not a question the video already answers (kill count, total).
 - Captions: 1 to 3 words.
 - No "subscribe", no emoji. Hook format never repeats twice in a row.
 
