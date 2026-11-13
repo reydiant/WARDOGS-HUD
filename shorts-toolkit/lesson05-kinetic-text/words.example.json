@@ -1,0 +1,9 @@
+{
+  "bpm": 128,
+  "fps": 60,
+  "words": [
+    {"text": "$0",       "beat": 0, "len_beats": 2, "style": "slam"},
+    {"text": "ONE LIFE", "beat": 2, "len_beats": 2, "style": "gold"},
+    {"text": "+$81,090", "beat": 4, "len_beats": 3, "style": "red", "y": 0.55}
+  ]
+}
