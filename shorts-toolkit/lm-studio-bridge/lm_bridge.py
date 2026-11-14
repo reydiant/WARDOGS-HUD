@@ -16,24 +16,35 @@ Options:
   --url http://localhost:1234/v1   LM Studio server
   --model NAME                     exact name from LM Studio's list. Default: the first chat model it
                                    reports, which may not be the one you loaded; the script warns
-  --hook FORMAT                    payoff-first | question | challenge | personality | series
+  --hook FORMAT                    payoff-first | question | challenge | personality | series | one-life-story
                                    default: next one in rotation, never the same twice in a row
+  --plan plan.json                 one-life-story mode: facts come from the kills left in the plan, and the
+                                   model also drafts a caption for each beat (hook, setup, beats, risky, payoff)
+  --apply                          with --plan: put the captions that passed into plan.captioned.json and
+                                   run the full plan check on it
   --record                         write the chosen hook to hook_log.json (do this after you post)
   --tries 3                        how many times to ask the model to fix its own failures
 """
-import argparse, json, os, re, sys, urllib.request, urllib.error
+import argparse, copy, json, os, re, sys, urllib.request, urllib.error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-HOOKS = ["payoff-first", "question", "challenge", "personality", "series"]
+STORY_DIR = os.path.join(HERE, "..", "lesson06-one-life-story")
+sys.path.insert(0, STORY_DIR)
+import story_rules as R                    # one list of banned words and voice rules for every check
+
+HOOKS = ["payoff-first", "question", "challenge", "personality", "series", R.HOOK_FORMAT]
 TAGS = "#wardogs #shorts #fps #gaming"
 EMOJI = re.compile("[\U0001F300-\U0001FAFF☀-➿]")
-BANNED = ("subscribe", "like and", "link in bio", "insane", "epic",
-          "payoff first", "payoff-first", "question hook", "hook format", "personality pov", "series entry")
+BANNED = R.BANNED                          # includes the old list plus the new hype words and labels
 
 
-def facts_from(path, hook):
+def facts_from(path, hook, keep_ids=None):
+    """Facts for the model. keep_ids limits them to the kills left in a story plan, so the
+    titles can only quote numbers the Short actually shows."""
     cfg = json.load(open(path, encoding="utf-8"))
-    ev = cfg["events"]
+    ev = R.load_events(cfg)
+    if keep_ids is not None:
+        ev = [e for e in ev if e["id"] in keep_ids]
     total = sum(e["amount"] for e in ev)
     head = sum(1 for e in ev if e.get("headshot"))
     big = max(ev, key=lambda e: e["amount"])
@@ -194,6 +205,79 @@ def check(draft, f):
     return good_titles, bad
 
 
+SLOTS = {"hook": "hook", "setup": "setup", "risky": "risky", "payoff": "payoff"}
+
+
+def story_slots(plan):
+    """Caption slots in plan order: hook, setup, beat1..beat4, risky, payoff."""
+    out, n = [], 0
+    for i, s in enumerate(plan["segments"]):
+        if s["section"] == "beat":
+            n += 1
+            out.append((f"beat{n}", i))
+        elif s["section"] in SLOTS:
+            out.append((s["section"], i))
+    return out
+
+
+def story_facts(cfg, plan):
+    ev = {e["id"]: e for e in R.load_events(cfg)}
+    beats = []
+    for slot, i in story_slots(plan):
+        s = plan["segments"][i]
+        e = ev.get(s.get("kill"))
+        beats.append({"slot": slot, "edit": s["effect"], "owner_text": s["texts"][0]["text"] if s["texts"] else "",
+                      "kill": {"what": e.get("note"), "distance_m": e.get("dist_m"), "headshot": bool(e.get("headshot")),
+                               "reward": e.get("amount")} if e else None})
+    vocab = sorted(R.vocabulary(cfg) - R.NEUTRAL)
+    return {"labels": cfg.get("labels", []), "beats": beats, "story_words": vocab,
+            "spanish_ok": sorted(R.SPANISH), "max_caption_words": R.MAX_CAPTION_WORDS}
+
+
+def check_story(draft, f, cfg, plan, last_hook):
+    """Extra checks in one-life-story mode. Returns {slot: [reasons]} for anything that fails."""
+    bad = {}
+    keep = {x["kill"] for x in plan["counter"]["steps"]}
+    vocab, ok = R.vocabulary(cfg), R.allowed_numbers(cfg, keep)
+    caps = draft.get("beat_captions") or {}
+    for slot, _ in story_slots(plan):
+        text = (caps.get(slot) or "").strip()
+        why = ["missing"] if not text else R.text_problems(text, vocab, ok)
+        if text and EMOJI.search(text):
+            why.append("emoji")
+        if why:
+            bad[f"beat_captions.{slot}: {text}"] = why
+    # voice: a Spanish word only where it fits. One per piece, two in the whole package, never the same one twice
+    pieces = list(draft.get("titles") or []) + [draft.get("description", ""), draft.get("pinned_comment", "")] \
+        + list(draft.get("captions") or []) + list(caps.values())
+    found = [w for p in pieces for w in R.spanish_in(p or "")]
+    if len(found) > R.SPANISH_PER_PACKAGE or len(set(found)) < len(found):
+        bad["voice"] = [f"Spanish words used: {', '.join(found)}. At most {R.SPANISH_PER_PACKAGE} in the whole "
+                        f"Short and never the same one twice. Don't force it."]
+    for p in pieces:
+        if len(R.spanish_in(p or "")) > R.SPANISH_PER_PIECE:
+            bad.setdefault("voice", []).append(f"'{p}' has more than one Spanish word")
+    if last_hook == R.HOOK_FORMAT:
+        bad["hook_format"] = [f"the last Short was also {R.HOOK_FORMAT}. Rule: never the same hook format twice in a row. "
+                              f"Post a different format first, or decide to break the rule on purpose."]
+    return bad
+
+
+def apply_captions(draft, cfg, plan):
+    """Copy the beat captions into a new plan and run the full plan check on it."""
+    import story_plan as SP
+    p = copy.deepcopy(plan)
+    caps = draft.get("beat_captions") or {}
+    for slot, i in story_slots(p):
+        if caps.get(slot) and p["segments"][i]["texts"]:
+            x = p["segments"][i]["texts"][0]
+            x["text"] = caps[slot].strip()
+            while len(R.wrap(x["text"], x["size"])) > R.MAX_LINES and x["size"] > R.MIN_TEXT_PX:
+                x["size"] -= 4
+    F, Wn = SP.check(p, cfg)
+    return p, F, Wn
+
+
 def ask(url, model, system, user):
     body = json.dumps({"model": model, "temperature": 0.7, "messages": [
         {"role": "system", "content": system}, {"role": "user", "content": user}]}).encode()
@@ -216,11 +300,25 @@ def main():
     ap.add_argument("--hook", choices=HOOKS)
     ap.add_argument("--record", action="store_true")
     ap.add_argument("--tries", type=int, default=3)
+    ap.add_argument("--plan")
+    ap.add_argument("--apply", action="store_true")
     a = ap.parse_args()
 
-    hook = next_hook(a.hook)
-    f = facts_from(a.events, hook)
     system = open(os.path.join(HERE, "lm_system_prompt.md"), encoding="utf-8").read()
+    plan = cfg = None
+    if a.plan:                               # one-life-story mode
+        cfg = json.load(open(a.events, encoding="utf-8"))
+        plan = json.load(open(a.plan, encoding="utf-8"))
+        log = os.path.join(HERE, "hook_log.json")
+        hist = json.load(open(log, encoding="utf-8")) if os.path.exists(log) else []
+        last_hook = hist[-1] if hist else None
+        hook = R.HOOK_FORMAT
+        f = facts_from(a.events, hook, {x["kill"] for x in plan["counter"]["steps"]})
+        f["story"] = story_facts(cfg, plan)
+        system += "\n\n" + open(os.path.join(HERE, "lm_story_prompt.md"), encoding="utf-8").read()
+    else:
+        hook = next_hook(a.hook)
+        f = facts_from(a.events, hook)
     try:
         ids = [m["id"] for m in json.load(urllib.request.urlopen(a.url + "/models", timeout=10))["data"]]
         chat = [i for i in ids if "embed" not in i.lower()]   # embedding models cannot chat
@@ -243,7 +341,9 @@ def main():
             user += f"\n\nYour last reply was not valid JSON ({e}). Return only the JSON object."
             continue
         titles, bad = check(draft, f)
-        if not bad:
+        if plan:
+            bad.update(check_story(draft, f, cfg, plan, last_hook))
+        if not bad or set(bad) == {"hook_format"}:   # the model can't fix the rotation; stop asking
             break
         user = ("Facts:\n" + json.dumps(f, indent=2) + "\n\nYour last draft failed these checks. Fix only these:\n"
                 + json.dumps(bad, indent=2) + "\n\nLast draft:\n" + json.dumps(draft, indent=2))
@@ -253,7 +353,7 @@ def main():
 
     out = {"model": model, "tries_used": min(i + 1, a.tries) if draft is not None else 0, "hook_format": hook, "facts": f, "passed_titles": titles, "description": draft.get("description"),
            "pinned_comment": draft.get("pinned_comment"), "captions": draft.get("captions"),
-           "failed_checks": bad}
+           "beat_captions": draft.get("beat_captions"), "failed_checks": bad}
     safe = re.sub(r"[^A-Za-z0-9._-]+", "_", model)          # one output file per model, so runs can be compared
     path = os.path.splitext(a.events)[0] + "." + safe + ".text.json"
     json.dump(out, open(path, "w", encoding="utf-8"), indent=2)
@@ -263,6 +363,19 @@ def main():
     for k, v in bad.items():
         print("  FAIL", k, "->", "; ".join(v))
     print("wrote", path)
+    if plan and a.apply:
+        caption_bad = [k for k in bad if k.startswith("beat_captions") or k == "voice"]
+        if caption_bad:
+            print("Not applying: some beat captions failed. Fix them by hand in the text file or rerun.")
+        else:
+            newplan, F, Wn = apply_captions(draft, cfg, plan)
+            dst = os.path.splitext(a.plan)[0] + ".captioned.json"
+            json.dump(newplan, open(dst, "w", encoding="utf-8"), indent=2)
+            for w in Wn:
+                print("  plan warn", w)
+            for x in F:
+                print("  plan FAIL", x)
+            print(f"wrote {dst} - plan check {'PASSES' if not F else 'FAILS'}")
     if a.record:
         log = os.path.join(HERE, "hook_log.json")
         h = json.load(open(log)) if os.path.exists(log) else []

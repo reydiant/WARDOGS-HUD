@@ -1,0 +1,15 @@
+{
+  "clip": "demo_match.mp4",
+  "hook":   {"kill": 6, "text": "ONE LIFE. NO ARMOR."},
+  "setup":  {"from": 2.0, "text": "HOLD THE ZONE"},
+  "beats": [
+    {"kill": 1, "label": "FIRST CONTACT",      "effect": "hold"},
+    {"kill": 2, "label": "THROUGH THE SMOKE",  "effect": "freeze-rewind"},
+    {"kill": 4, "label": "106M ON THE RIDGE",  "effect": "speed-ramp"}
+  ],
+  "risky":  {"kill": 5, "label": "PUSHED THE TRUCK ALONE", "effect": "kinetic-text"},
+  "payoff": {"kill": 6, "label": "141M TO SAVE THE ZONE"},
+  "next":   "Next: one life, pistol only",
+  "counter": true,
+  "cash": true
+}

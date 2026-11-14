@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+hook_log.json
+*.text.json
+plan.json
+plan.captioned.json
+exports/
+*.mp4
+*.mov

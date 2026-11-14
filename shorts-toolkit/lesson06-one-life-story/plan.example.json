@@ -1,0 +1,305 @@
+{
+  "version": 1,
+  "format": "one-life-story",
+  "fps": 60,
+  "size": [
+    1080,
+    1920
+  ],
+  "clip": "demo_match.mp4",
+  "segments": [
+    {
+      "section": "hook",
+      "kill": 6,
+      "effect": "cut",
+      "pieces": [
+        {
+          "type": "play",
+          "src_in": 61.3,
+          "src_out": 63.1,
+          "speed": 1.0
+        }
+      ],
+      "texts": [
+        {
+          "text": "ONE LIFE. NO ARMOR.",
+          "at": 0.0,
+          "dur": 1.8,
+          "size": 96,
+          "style": "gold",
+          "y": 0.3
+        }
+      ],
+      "out_start": 0.0,
+      "out_end": 1.8
+    },
+    {
+      "section": "setup",
+      "effect": "cut",
+      "pieces": [
+        {
+          "type": "play",
+          "src_in": 2.0,
+          "src_out": 8.0,
+          "speed": 1.0
+        }
+      ],
+      "texts": [
+        {
+          "text": "HOLD THE ZONE",
+          "at": 1.95,
+          "dur": 5.7,
+          "size": 84,
+          "style": "white",
+          "y": 0.3
+        }
+      ],
+      "out_start": 1.8,
+      "out_end": 7.8
+    },
+    {
+      "section": "beat",
+      "effect": "hold",
+      "pieces": [
+        {
+          "type": "play",
+          "src_in": 11.0667,
+          "src_out": 13.95,
+          "speed": 1.0
+        },
+        {
+          "type": "freeze",
+          "at": 13.95,
+          "dur": 0.5
+        },
+        {
+          "type": "play",
+          "src_in": 13.95,
+          "src_out": 16.3,
+          "speed": 1.0
+        }
+      ],
+      "texts": [
+        {
+          "text": "FIRST CONTACT",
+          "at": 11.033,
+          "dur": 2.4,
+          "size": 84,
+          "style": "white",
+          "y": 0.3
+        }
+      ],
+      "kill": 1,
+      "out_start": 7.8,
+      "out_end": 13.533
+    },
+    {
+      "section": "beat",
+      "effect": "freeze-rewind",
+      "pieces": [
+        {
+          "type": "freeze",
+          "at": 24.85,
+          "dur": 0.3
+        },
+        {
+          "type": "rewind",
+          "src_in": 21.7667,
+          "src_out": 24.85,
+          "dur": 0.3
+        },
+        {
+          "type": "play",
+          "src_in": 21.7667,
+          "src_out": 26.9,
+          "speed": 1.0
+        }
+      ],
+      "texts": [
+        {
+          "text": "THROUGH THE SMOKE",
+          "at": 13.633,
+          "dur": 5.533,
+          "size": 84,
+          "style": "white",
+          "y": 0.3
+        }
+      ],
+      "kill": 2,
+      "out_start": 13.533,
+      "out_end": 19.267
+    },
+    {
+      "section": "beat",
+      "effect": "speed-ramp",
+      "pieces": [
+        {
+          "type": "play",
+          "src_in": 36.45,
+          "src_out": 40.5,
+          "speed": 2.0
+        },
+        {
+          "type": "play",
+          "src_in": 40.5,
+          "src_out": 44.2,
+          "speed": 1.0
+        }
+      ],
+      "texts": [
+        {
+          "text": "106M ON THE RIDGE",
+          "at": 21.492,
+          "dur": 3.4,
+          "size": 84,
+          "style": "white",
+          "y": 0.3
+        }
+      ],
+      "kill": 4,
+      "out_start": 19.267,
+      "out_end": 24.992
+    },
+    {
+      "section": "risky",
+      "effect": "kinetic-text",
+      "pieces": [
+        {
+          "type": "play",
+          "src_in": 48.65,
+          "src_out": 55.15,
+          "speed": 1.0
+        }
+      ],
+      "texts": [
+        {
+          "text": "PUSHED THE TRUCK ALONE",
+          "at": 28.892,
+          "dur": 2.5,
+          "size": 92,
+          "style": "slam",
+          "y": 0.62,
+          "kinetic": true
+        }
+      ],
+      "kill": 5,
+      "out_start": 24.992,
+      "out_end": 31.492
+    },
+    {
+      "section": "payoff",
+      "effect": "slowmo",
+      "pieces": [
+        {
+          "type": "play",
+          "src_in": 57.7,
+          "src_out": 61.0,
+          "speed": 1.0
+        },
+        {
+          "type": "play",
+          "src_in": 61.0,
+          "src_out": 62.0,
+          "speed": 0.5
+        },
+        {
+          "type": "play",
+          "src_in": 62.0,
+          "src_out": 63.7,
+          "speed": 1.0
+        }
+      ],
+      "texts": [
+        {
+          "text": "141M TO SAVE THE ZONE",
+          "at": 34.992,
+          "dur": 3.4,
+          "size": 96,
+          "style": "gold",
+          "y": 0.3
+        }
+      ],
+      "kill": 6,
+      "out_start": 31.492,
+      "out_end": 38.492
+    },
+    {
+      "section": "end",
+      "effect": "card",
+      "pieces": [
+        {
+          "type": "card",
+          "dur": 1.5,
+          "bg_at": 63.6833
+        }
+      ],
+      "texts": [
+        {
+          "text": "@crazynando",
+          "at": 38.492,
+          "dur": 1.5,
+          "size": 80,
+          "style": "white",
+          "y": 0.4
+        },
+        {
+          "text": "twitch.tv/reydiant",
+          "at": 38.492,
+          "dur": 1.5,
+          "size": 64,
+          "style": "white",
+          "y": 0.47
+        },
+        {
+          "text": "Next: one life, pistol only",
+          "at": 38.492,
+          "dur": 1.5,
+          "size": 64,
+          "style": "gold",
+          "y": 0.56
+        }
+      ],
+      "out_start": 38.492,
+      "out_end": 39.992
+    }
+  ],
+  "counter": {
+    "show": true,
+    "cash": true,
+    "size": 44,
+    "y": 0.085,
+    "steps": [
+      {
+        "at": 11.433,
+        "kill": 1,
+        "kills": 1,
+        "cash": 1350
+      },
+      {
+        "at": 13.533,
+        "kill": 2,
+        "kills": 2,
+        "cash": 2700
+      },
+      {
+        "at": 21.892,
+        "kill": 4,
+        "kills": 3,
+        "cash": 5400
+      },
+      {
+        "at": 28.892,
+        "kill": 5,
+        "kills": 4,
+        "cash": 6750
+      },
+      {
+        "at": 35.392,
+        "kill": 6,
+        "kills": 5,
+        "cash": 10800
+      }
+    ]
+  },
+  "total": 39.992
+}
