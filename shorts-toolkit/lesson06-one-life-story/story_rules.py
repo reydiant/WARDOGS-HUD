@@ -191,7 +191,12 @@ def text_width(text, size):
 
 
 def wrap(text, size, max_w=SAFE_X1 - SAFE_X0):
-    """Split into lines that fit the safe width. Returns the lines (may still be too wide)."""
+    """Split into lines that fit the safe width. Returns the lines (may still be too wide).
+    If the text is two short sentences ("ONE LIFE. NO ARMOR.") and it needs two lines, it breaks
+    between the sentences."""
+    parts = re.split(r"(?<=[.!?])\s+", text.strip())
+    if len(parts) == 2 and text_width(text, size) > max_w and all(text_width(p, size) <= max_w for p in parts):
+        return parts
     lines, cur = [], ""
     for w in text.split():
         trial = (cur + " " + w).strip()

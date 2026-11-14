@@ -141,7 +141,19 @@ If the risky call or the payoff lands outside its time window, you get a warning
 
 ## Results on the fake match
 
-DEMO_RESULTS
+Rendered from `plan.example.json` on the fake 70-second match, without music (the lesson 2 bed needs scipy, which the test machine didn't have):
+
+- QC: 1080x1920, 60 fps, 40.00 s, -14.1 LUFS, true peak -2.6 dB. File size 120 MB (the fake footage is pure noise, so real footage should come out smaller).
+- Frame one is the kill frame (the red flash at 1:01.300 in the recording), with "ONE LIFE. NO ARMOR." already on screen.
+- Every kill lands on the frame the plan says. The kill counter reads 1 to 5 and the cash adds up to $10,800. Kill 3 was cut, and nothing on screen mentions it.
+- The only frozen stretch is the end card, which is meant to hold still.
+- 15 of 15 rule tests pass (`test_story_plan.py`), and 13 of 13 bridge checks pass (`../lm-studio-bridge/test_story_mode.py`).
+
+What the first renders caught, now fixed:
+
+- The first render ran 40.08 s, because AAC padding on each piece added up. Pieces now keep plain audio until the final encode.
+- Loudness came out at -18.9 LUFS with peaks at +4.9 dB. ffmpeg's loudnorm can't reach -14 when gunshots peak that high. The render now sets the gain, limits peaks and measures the finished file until both numbers pass.
+- The hook line faded in, so frame one had no text. Text that starts at 0 s is now fully there on frame one.
 
 ## Known gaps
 

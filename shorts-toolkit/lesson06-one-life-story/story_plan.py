@@ -591,7 +591,9 @@ def drawtexts(plan, tmp):
         n += 1
         tf = os.path.join(tmp, f"t{n:03d}.txt")
         open(tf, "w", encoding="utf-8").write(text)
-        alpha = f"if(lt(t,{a + fade:.3f}),(t-{a:.3f})/{fade},if(gt(t,{b - 0.08:.3f}),({b:.3f}-t)/0.08,1))"
+        out_fade = f"if(gt(t,{b - 0.08:.3f}),({b:.3f}-t)/0.08,1)"
+        # text that starts on frame one is fully there on frame one (the hook line must be readable at once)
+        alpha = out_fade if a < R.FRAME else f"if(lt(t,{a + fade:.3f}),(t-{a:.3f})/{fade},{out_fade})"
         out.append(f"drawtext=fontfile='{esc_path(font)}':textfile='{esc_path(tf)}':fontsize={size}:"
                    f"fontcolor={color}:borderw={max(3, size // 12)}:bordercolor=0x0B0A10:shadowx=0:shadowy=6:"
                    f"shadowcolor=0x000000@0.6:x={x_expr}:y={y_px:.0f}:alpha='{alpha}':"
