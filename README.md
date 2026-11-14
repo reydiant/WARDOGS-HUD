@@ -121,17 +121,16 @@ Making a Short
 
 Press Make Short on a clip, after you're done playing. The editor:
 
-	•	frames it vertically at 1080×1920, under 60 seconds
+	•	frames it vertically at 1080×1920, 40 seconds at most
 	•	puts the streak title and your name at the top
 	•	pops up a call-out on each kill, like "HEADSHOT · 107 m · paulcorel012" or "DOUBLE KILL"
 	•	fills a kill counter along the bottom (red dots are headshots)
-	•	ends on a stats card
 
 Rendering plays through in real time (a 30-second Short takes about 30 seconds), so keep the tab open. When it's done, press Save video and copy the ready-made title and hashtags. Upload at youtube.com/upload or in the YouTube app; vertical videos this short are posted as Shorts.
 
 Montages
 
-Make montage joins your best clips that fit in one Short, in the order they happened, with an intro card, flash cuts between clips and a session stats card at the end.
+Make montage joins your best clips that fit in one 40-second Short, in the order they happened, with flash cuts between clips.
 
 Clip settings
 
@@ -242,6 +241,8 @@ Privacy
 	•	Your history, settings and clips are stored in this browser on this PC. Use Backup to keep a copy of your history.
 
 What's new
+
+v51: 40-second Shorts. Shorts and montages are now 40 seconds at most, with no intro or end card, so the video opens on the action and loops. The rules for making Shorts are in SHORTS-RULES.md, and the stats for each Short go in shorts-log.csv.
 
 v18: Highlights and YouTube Shorts. Automatic kill streak clips scored for how post-worthy they are, a vertical Shorts editor with kill call-outs, and montages. Rendering only happens when you press the button.
 
