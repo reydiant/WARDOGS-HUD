@@ -20,12 +20,15 @@ Same `events.json` as lesson 1. Add an optional `"note"` and `"dist_m"` to a kil
 
 For a one-life-story Short (lesson 6), pass the plan:
 
-    python lm_bridge.py events.json --plan plan.json --apply --model <gemma name from LM Studio>
+    python lm_bridge.py events.json --plan plan.json --apply --model <model name from LM Studio>
 
 - The facts only hold the kills left in the plan, so a title can't quote a cut kill's numbers.
 - The model gets `lm_story_prompt.md` added after `lm_system_prompt.md`, so the voice rules and banned words still apply.
 - It writes one caption per story slot (hook, setup, each beat, risky, payoff). Code checks each caption the same way the plan checker does: every word has to come from a label or kill note in events.json, every number from a kill that's still in the Short, 5 words at most, no banned words.
+- Every story title has to start with a number ("5 kills, one life...").
+- No profanity, slurs or gore words, in English or Spanish. The list is in `story_rules.py`, and you can add words to `../lesson06-one-life-story/banned_words.txt`. Banned words match whole words only, so "epicenter" doesn't trip "epic".
 - Spanish: at most one word in a caption, two in the whole Short, and never the same word twice.
+- `../lesson06-one-life-story/stats.py ship` records the hook format after you post, so you don't need `--record` for story Shorts.
 - `--apply` puts the captions that passed into `plan.captioned.json` and runs the full plan check on it.
 - The hook format is `one-life-story`. If the last Short you recorded was one too, the run is marked failed, because the rule is never the same format twice in a row.
 

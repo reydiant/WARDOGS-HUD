@@ -1,13 +1,60 @@
 {
   "clip": "demo_match.mp4",
   "start": 0,
-  "labels": ["ONE LIFE. NO ARMOR.", "HOLD THE ZONE", "LAST ONE ON THE POINT", "RELOAD OR RUN"],
+  "labels": [
+    "ONE LIFE. NO ARMOR.",
+    "HOLD THE ZONE",
+    "LAST ONE ON THE POINT",
+    "RELOAD OR RUN"
+  ],
   "events": [
-    {"t": 14.20, "amount": 1350, "headshot": false, "dist_m": 34,  "note": "first contact at the fence"},
-    {"t": 24.85, "amount": 1350, "headshot": true,  "dist_m": 62,  "note": "headshot through the smoke"},
-    {"t": 33.40, "amount": 1350, "headshot": false, "dist_m": 18,  "note": "traded on the stairs"},
-    {"t": 41.10, "amount": 2700, "headshot": true,  "dist_m": 106, "note": "106m headshot on the ridge"},
-    {"t": 52.55, "amount": 1350, "headshot": false, "dist_m": 12,  "note": "pushed the truck alone"},
-    {"t": 61.30, "amount": 4050, "headshot": true,  "dist_m": 141, "note": "141m headshot to save the zone"}
+    {
+      "t": 14.2,
+      "amount": 1350,
+      "headshot": false,
+      "dist_m": 34,
+      "note": "first contact at the fence"
+    },
+    {
+      "t": 24.85,
+      "amount": 1350,
+      "headshot": true,
+      "dist_m": 62,
+      "note": "headshot through the smoke"
+    },
+    {
+      "t": 33.4,
+      "amount": 1350,
+      "headshot": false,
+      "dist_m": 18,
+      "note": "traded on the stairs"
+    },
+    {
+      "t": 41.1,
+      "amount": 2700,
+      "headshot": true,
+      "dist_m": 106,
+      "note": "106m headshot on the ridge"
+    },
+    {
+      "t": 52.55,
+      "amount": 1350,
+      "headshot": false,
+      "dist_m": 12,
+      "note": "pushed the truck alone"
+    },
+    {
+      "t": 61.3,
+      "amount": 4050,
+      "headshot": true,
+      "dist_m": 141,
+      "note": "141m headshot to save the zone"
+    }
+  ],
+  "deaths": [
+    {
+      "t": 68.4,
+      "note": "died holding the zone"
+    }
   ]
 }

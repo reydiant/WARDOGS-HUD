@@ -1,0 +1,2 @@
+# One word or phrase per line. Every check in lesson 6 and the LM Studio bridge blocks these.
+# Lines starting with # are ignored.

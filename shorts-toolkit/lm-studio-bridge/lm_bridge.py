@@ -158,7 +158,7 @@ def check(draft, f):
             why.append(f"{n}")
         if EMOJI.search(t):
             why.append("emoji")
-        if any(b in t.lower() for b in BANNED):
+        if R.banned_in(t):
             why.append("banned word")
         (bad.setdefault("title: " + t, why) if why else good_titles.append(t))
     desc = draft.get("description", "")
@@ -173,7 +173,7 @@ def check(draft, f):
         d.append(f"{n}")
     if re.search(r"\bheadshots?\b", body, re.I) and f["headshot_count"] == 0:
         d.append("mentions headshots but the facts say 0")
-    if EMOJI.search(desc) or any(b in desc.lower() for b in BANNED):
+    if EMOJI.search(desc) or R.banned_in(desc):
         d.append("emoji or banned word")
     if d:
         bad["description"] = d
@@ -186,7 +186,7 @@ def check(draft, f):
     if re.search(r"kill count|how many (kills|headshots)|final total|how much|what was the (total|final)", pc, re.I):
         p.append("the video already answers this; ask viewers to pick or argue about a specific kill")
     p += [f"{n}" for n in num_problems(pc)]
-    if EMOJI.search(pc) or any(b in pc.lower() for b in BANNED):
+    if EMOJI.search(pc) or R.banned_in(pc):
         p.append("emoji or banned word")
     if p:
         bad["pinned_comment"] = p
@@ -198,7 +198,7 @@ def check(draft, f):
         if not 1 <= len(cap.split()) <= 3:
             c.append(f"'{cap}' is not 1 to 3 words")
         c += [f"{n}" for n in num_problems(cap)]
-        if EMOJI.search(cap) or any(b in cap.lower() for b in BANNED):
+        if EMOJI.search(cap) or R.banned_in(cap):
             c.append(f"'{cap}' is an internal label, an emoji or a banned word")
     if c:
         bad["captions"] = c
@@ -237,6 +237,9 @@ def story_facts(cfg, plan):
 def check_story(draft, f, cfg, plan, last_hook):
     """Extra checks in one-life-story mode. Returns {slot: [reasons]} for anything that fails."""
     bad = {}
+    for t in draft.get("titles") or []:      # standing rule: a story title leads with a number
+        if not re.match(r"\s*\$?\d", t):
+            bad[f"story title: {t}"] = ["a story title must start with a number, like '5 kills, one life...' or '$10,800...'"]
     keep = {x["kill"] for x in plan["counter"]["steps"]}
     vocab, ok = R.vocabulary(cfg), R.allowed_numbers(cfg, keep)
     caps = draft.get("beat_captions") or {}
@@ -343,6 +346,7 @@ def main():
         titles, bad = check(draft, f)
         if plan:
             bad.update(check_story(draft, f, cfg, plan, last_hook))
+            titles = [t for t in titles if f"story title: {t}" not in bad]
         if not bad or set(bad) == {"hook_format"}:   # the model can't fix the rotation; stop asking
             break
         user = ("Facts:\n" + json.dumps(f, indent=2) + "\n\nYour last draft failed these checks. Fix only these:\n"

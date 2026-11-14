@@ -21,7 +21,7 @@ Commands:
 build needs nothing but Python 3. check uses Pillow to measure text if it's installed.
 render and --clip need ffmpeg and ffprobe on the PATH. Everything else is in story_rules.py.
 """
-import argparse, json, os, shutil, subprocess, sys, tempfile
+import argparse, json, os, re, shutil, subprocess, sys, tempfile
 import story_rules as R
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -203,6 +203,7 @@ def build(cfg, beats):
                  "texts": end_texts})
 
     plan = {"version": 1, "format": R.HOOK_FORMAT, "fps": R.FPS, "size": [R.W, R.H], "clip": clip,
+            "new_technique": beats.get("new_technique", ""),
             "segments": segs,
             "counter": {"show": bool(beats.get("counter", True)), "cash": bool(beats.get("cash", True)),
                         "size": 44, "y": 0.085}}
@@ -373,6 +374,22 @@ def check(plan, cfg, clip=None):
     else:
         F.append("the last segment must be the end card")
 
+    # every Short tests one new technique, and it has to be new (checked against the evolution log)
+    tech = (plan.get("new_technique") or "").strip()
+    if not tech:
+        F.append("no new_technique: every Short tests one new technique. Add it to beats.json")
+    else:
+        import stats
+        used = stats.used_techniques(stats.load())
+        if tech.lower() in used:
+            F.append(f"new_technique '{tech}' was already tested in {used[tech.lower()]}")
+
+    # max one death on screen
+    seen = [d["t"] for d in cfg.get("deaths", []) if any(shows(p, d["t"]) for s in segs if s["section"] != "end"
+                                                          for p in s["pieces"])]
+    if len(seen) > 1:
+        F.append(f"{len(seen)} deaths are on screen (at {', '.join(f'{t:g}' for t in seen)} s in the match). Max one.")
+
     # every story section: its kill is in its footage, enough readable time, match order
     story = [s for s in segs if s["section"] in ("setup", "beat", "risky", "payoff")]
     prev_max, prev_name = None, None
@@ -452,6 +469,13 @@ def check(plan, cfg, clip=None):
     for s in segs:
         s.pop("_t0", None), s.pop("_t1", None)
     return F, Wn
+
+
+def shows(p, t):
+    """Does this piece put source time t on screen (forwards, frozen or rewinding)?"""
+    if p["type"] in ("play", "rewind"):
+        return p["src_in"] - R.FRAME / 2 <= t <= p["src_out"]
+    return p["type"] == "freeze" and abs(p["at"] - t) <= R.FRAME
 
 
 def plan_with_times(segs, plan):
@@ -812,6 +836,11 @@ def main():
     if a.cmd == "export":
         export(plan, cfg, a.out)
     if a.cmd == "render":
+        # standing rule: versioned exports, never overwrite
+        if not re.search(r"v\d+", os.path.splitext(os.path.basename(a.out))[0]):
+            sys.exit(f"Name the export with a version number, like {os.path.splitext(a.out)[0]}_v1.mp4")
+        if os.path.exists(a.out):
+            sys.exit(f"{a.out} already exists. Exports are never overwritten: use the next version number.")
         clip = a.clip or plan.get("clip")
         if not clip or not os.path.exists(clip):
             sys.exit(f"footage not found: {clip}. Pass --clip match.mp4")

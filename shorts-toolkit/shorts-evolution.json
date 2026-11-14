@@ -1,0 +1,30 @@
+{
+  "hypothesis": "A story with a stake keeps more viewers past the first second and to the end than a counter does.",
+  "shorts": [
+    {
+      "short": "10k one life",
+      "format": "one life (before the story format)",
+      "length_s": 37,
+      "stats": {
+        "reported": {
+          "stayed": 55,
+          "avg_watch": 59
+        }
+      },
+      "verdict": "keep",
+      "note": "Best watch time on the channel. Why the owner picked the one-life-story niche."
+    },
+    {
+      "short": "latest money Short",
+      "format": "money counter + fast kills",
+      "length_s": null,
+      "stats": {
+        "reported": {
+          "stayed": 25
+        }
+      },
+      "verdict": "drop",
+      "note": "Fast kills with little editing. Money counting alone isn't a strong enough niche."
+    }
+  ]
+}

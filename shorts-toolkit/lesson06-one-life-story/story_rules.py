@@ -46,6 +46,20 @@ BANNED = ("subscribe", "like and", "link in bio", "smash that", "hit the bell", 
           "series entry", "one-life-story", "one life story", "story format", "rising beat",
           "risky call", "story beat")
 
+# Standing rule: no profanity, slurs or gore words in any text. English and Puerto Rican Spanish.
+# "blood" alone is left out on purpose so a series name like "Blood Money" still works; "bloodbath",
+# "bloody" and the gore words are in. Slurs aren't spelled out in this file. Put them, and any other
+# word you want blocked, one per line in banned_words.txt next to this file.
+PROFANITY_GORE = ("fuck", "fucking", "shit", "bitch", "bastard", "asshole", "dick", "piss", "damn", "hell yeah",
+                  "wtf", "stfu", "puñeta", "puneta", "coño", "carajo", "mierda", "cabrón", "cabron",
+                  "pendejo", "puta", "joder", "bicho", "gore", "gory", "guts", "brains", "bloodbath", "bloody",
+                  "decapitate", "decapitated", "dismember", "dismembered", "mutilate", "mutilated", "splatter",
+                  "entrails", "corpse", "butcher", "butchered", "slaughter", "slaughtered", "massacre")
+_extra = os.path.join(HERE, "banned_words.txt")
+EXTRA = tuple(w.strip().lower() for w in open(_extra, encoding="utf-8") if w.strip() and not w.startswith("#")) \
+    if os.path.exists(_extra) else ()
+BANNED = BANNED + PROFANITY_GORE + EXTRA
+
 # Words that join a caption together but claim nothing about the match. Every other word on
 # screen has to come from events.json (a label the owner wrote, or a kill's note).
 NEUTRAL = set("""A AN THE AND BUT OR SO THEN NOW STILL JUST ONLY HERE THERE THIS THAT IT IS WAS

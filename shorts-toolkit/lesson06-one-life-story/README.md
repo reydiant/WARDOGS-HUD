@@ -33,12 +33,14 @@ The edits you can give a beat:
 - `story_plan.py` turns your kills and beats into a timeline, checks it, exports files for the other lessons and renders a rough cut.
 - `story_rules.py` holds every rule and number in one place. The LM Studio bridge uses it too, so the two can't disagree.
 - `events.example.json` and `beats.example.json` are a filled-in example.
+- `stats.py` keeps the evolution log: what each Short tested, its Studio numbers, and keep, drop or retest.
+- `banned_words.txt` is yours to fill. Any word on it gets blocked everywhere, on top of the built-in list.
 - `make_demo_match.py` makes a fake 70-second match recording to test with.
 - `test_story_plan.py` breaks the example plan one rule at a time and makes sure each break is caught.
 
 ## What you write
 
-**events.json** is the same file the other lessons use, with two additions. `t` is now the time of the kill in your match recording, not in the Short.
+**events.json** is the same file the other lessons use, with three additions. `t` is now the time of the kill in your match recording, not in the Short.
 
 ```json
 {
@@ -46,12 +48,14 @@ The edits you can give a beat:
   "labels": ["ONE LIFE. NO ARMOR.", "HOLD THE ZONE"],
   "events": [
     {"t": 14.20, "amount": 1350, "headshot": false, "dist_m": 34, "note": "first contact at the fence"}
-  ]
+  ],
+  "deaths": [{"t": 68.4, "note": "died holding the zone"}]
 }
 ```
 
 - `labels` are true things about the match the footage shows: the constraint, the plan. Any word you want on screen has to be in a label or a kill's `note`.
 - `note` is what happened in that kill, in plain words.
+- `deaths` are the times you died in the recording. Only one can be on screen in a Short.
 
 **beats.json** is your story. Kills are numbered 1, 2, 3 and so on, in match order.
 
@@ -66,13 +70,15 @@ The edits you can give a beat:
   ],
   "risky":  {"kill": 5, "label": "PUSHED THE TRUCK ALONE", "effect": "kinetic-text"},
   "payoff": {"kill": 6, "label": "141M TO SAVE THE ZONE"},
-  "next":   "Next: one life, pistol only"
+  "next":   "Next: one life, pistol only",
+  "new_technique": "one-life story: a different edit on every beat"
 }
 ```
 
 - `setup.from` is where in the recording the setup footage starts. Add `"to"` to set where it ends.
 - A beat can take `"build": 2.5` and `"react": 1.2` (seconds before and after the kill) if you don't like the automatic split.
 - A risky call that isn't a kill takes `"from"` and `"to"` instead of `"kill"`.
+- `new_technique` is the one thing this Short tries for the first time. Each Short needs one, and the check fails if the evolution log shows it was already tried.
 - Kills you leave out of beats.json are cut. The kill counter and every number on screen only count the kills that are left.
 
 ## Run it
@@ -87,9 +93,9 @@ Open a terminal in `shorts-toolkit\lesson06-one-life-story`. On Windows, type `p
 
        python story_plan.py check plan.json events.json --clip match01.mp4
 
-3. Have Gemma draft the captions and titles in LM Studio. Load Gemma, start the server, then:
+3. Optional: have LM Studio draft the captions and titles. Load a model, start the server, then:
 
-       python ..\lm-studio-bridge\lm_bridge.py events.json --plan plan.json --apply --model <gemma name from LM Studio>
+       python ..\lm-studio-bridge\lm_bridge.py events.json --plan plan.json --apply --model <model name from LM Studio>
 
    Captions that pass go into `plan.captioned.json`, and that plan gets the full check. The titles and description are in `events.<model>.text.json`. If you'd rather keep your own labels, skip this step and use `plan.json` below.
 
@@ -112,7 +118,18 @@ Open a terminal in `shorts-toolkit\lesson06-one-life-story`. On Windows, type `p
        python ..\lesson04-loop-ending\loop_ending.py make story_v1.mp4 --out story_v1_loop.mp4 --blend 0.3
        python story_plan.py qc story_v1_loop.mp4
 
-Name each render with a new version number (v1, v2, and so on), so you never overwrite one.
+Every export needs a version number in its name (story_v1.mp4, story_v2.mp4). The render refuses a name without one, and it never overwrites a file that already exists.
+
+8. After you post, log it. This records the new technique and the hook format, so neither gets repeated by mistake:
+
+       python stats.py ship --short story_v1 --plan plan.captioned.json
+
+9. Give it the YouTube Studio numbers at 24 hours, then at 7 days:
+
+       python stats.py numbers --short story_v1 --at 24h --stayed 38 --avg-watch 51
+       python stats.py numbers --short story_v1 --at 7d --stayed 44 --avg-watch 56 --views 4200 --likes 180 --subs 6
+
+   The 7-day numbers mark the format keep, drop or retest. `python stats.py show` prints the whole log.
 
 `exports\commands.txt` has the lesson 3 and lesson 5 commands for this plan, in case you want to make those pieces by hand in your editor.
 
@@ -127,9 +144,21 @@ Name each render with a new version number (v1, v2, and so on), so you never ove
 - The hook runs past 2 s, the setup past 8 s, or the end card isn't the last 1.5 s with both handles and a "Next:" line.
 - Beats out of match order, the same edit twice in a row, or fewer than 3 kinds of edit across the beats.
 - No slow-mo on the payoff kill.
-- A banned word, a subscribe ask, or more than one Spanish word in a caption.
+- A banned word, a subscribe ask, or more than one Spanish word in a caption. Banned words include hype words, profanity and gore words in English and Spanish, plus anything in `banned_words.txt`.
+- More than one death on screen.
+- No `new_technique`, or one the evolution log says was already tried.
 
 If the risky call or the payoff lands outside its time window, you get a warning, not a fail. Same if the payoff kill isn't the one that paid the most. The best moment isn't always the biggest reward.
+
+## Stats loop
+
+Hypothesis: a story with a stake keeps more viewers past the first second and to the end than a counter does.
+
+The number this format goes after is stayed-to-watch, which was 25% on the last Short. `python stats.py show` prints the log, with the weakest number at the top.
+
+The log is `../shorts-evolution.json`. `stats.py` rewrites `../shorts-evolution.md` from it every time, as the repo copy of `/areas/shorts-evolution.md` in Claude's memory. It starts with the two Shorts you gave numbers for: "10k one life" (55% stayed, 59% watched) and the latest money Short (25% stayed).
+
+At 7 days, a format is a keep at 45% stayed and 50% watched or better, which is close to "10k one life". It's a drop at 30% stayed or worse, about where the money counter landed. Anything in between gets a retest. The 24-hour numbers only give an early read. These cutoffs are my pick, so change them at the top of `stats.py` if you want different ones.
 
 ## Tests
 
@@ -147,7 +176,7 @@ Rendered from `plan.example.json` on the fake 70-second match, without music (th
 - Frame one is the kill frame (the red flash at 1:01.300 in the recording), with "ONE LIFE. NO ARMOR." already on screen.
 - Every kill lands on the frame the plan says. The kill counter reads 1 to 5 and the cash adds up to $10,800. Kill 3 was cut, and nothing on screen mentions it.
 - The only frozen stretch is the end card, which is meant to hold still.
-- 15 of 15 rule tests pass (`test_story_plan.py`), and 13 of 13 bridge checks pass (`../lm-studio-bridge/test_story_mode.py`).
+- 21 of 21 tests pass (`test_story_plan.py`), and 15 of 15 bridge checks pass (`../lm-studio-bridge/test_story_mode.py`).
 
 What the first renders caught, now fixed:
 

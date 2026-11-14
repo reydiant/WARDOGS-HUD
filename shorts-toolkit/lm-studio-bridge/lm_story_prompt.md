@@ -28,8 +28,8 @@ Write one caption for every slot listed in `beats`, and no others.
 
 ## Titles in this mode
 
-Tell the story of the match: the constraint, then what it cost or what it got. Keep every title rule from above. Put a number in the first four words, and only numbers from the facts. Never call it a "one life story" or write any other internal label.
+Tell the story of the match: the constraint, then what it cost or what it got. Keep every title rule from above, and start every title with the number itself ("5 kills, one life...", "$10,800 with..."). Only numbers from the facts. Never call it a "one life story" or write any other internal label.
 
 ## Voice
 
-The voice rules above still apply: dark, gritty, plain, no hype words. Use a Spanish word only when it fits the moment. At most two in the whole Short, never the same one twice, and never more than one in a caption. Most Shorts need none.
+The voice rules above still apply: dark, gritty, plain, no hype words. No profanity, slurs or gore words, in English or Spanish. Use a Spanish word only when it fits the moment. At most two in the whole Short, never the same one twice, and never more than one in a caption. Most Shorts need none.

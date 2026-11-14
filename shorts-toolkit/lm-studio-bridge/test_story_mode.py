@@ -2,7 +2,7 @@
 """Test --plan mode against a fake LM Studio server (no model needed).
 
 The first draft has planted mistakes: a number from a cut kill, a word the footage doesn't show,
-a hype word, three Spanish words and a missing beat caption. The bridge must reject all of them
+a hype word, a title that doesn't start with a number, profanity, three Spanish words and a missing beat caption. The bridge must reject all of them
 and ask for a fix. The second draft is clean, and --apply must write a plan that passes the plan check.
 
   python test_story_mode.py
@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 STORY = os.path.join(HERE, "..", "lesson06-one-life-story")
 
 BAD = {"titles": ["5 kills, one life, no armor", "18m on the stairs. Insane.", "$10,800 and one life",
-                  "One shot to save the zone", "141m to save the zone, one life"],
+                  "One shot to save the zone. Carajo.", "141m to save the zone, one life"],
        "description": "A 141m headshot saved the zone.\n#wardogs #shorts #fps #gaming",
        "pinned_comment": "Smoke headshot or the 141m shot to save the zone?",
        "captions": ["ONE LIFE", "141M SHOT"],
@@ -22,7 +22,7 @@ BAD = {"titles": ["5 kills, one life, no armor", "18m on the stairs. Insane.", "
                          "beat1": "FLANKED THE BASE", "beat2": "18M ON THE STAIRS", "risky": "PUSHED THE TRUCK",
                          "payoff": "141M TO SAVE THE ZONE"}}
 GOOD = {"titles": ["5 kills, one life, no armor", "$10,800 with one life and no armor",
-                   "141m headshot to save the zone. One life.", "One life, 5 kills, last one on the point",
+                   "141m headshot to save the zone. One life.", "5 kills, last one on the point",
                    "5 kills before the zone fell? Not this time"],
         "description": "A 141m headshot saved the zone on the last push.\n#wardogs #shorts #fps #gaming",
         "pinned_comment": "Smoke headshot or the 141m shot to save the zone?",
@@ -46,7 +46,7 @@ class Fake(BaseHTTPRequestHandler):
         self.wfile.write(b)
 
     def do_GET(self):
-        self.reply({"data": [{"id": "google/gemma-3-12b"}]})
+        self.reply({"data": [{"id": "local-model"}]})
 
     def do_POST(self):
         body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
@@ -82,6 +82,9 @@ def main():
             "hype word rejected": "banned word" in fix_request,
             "Spanish limit enforced": "Spanish word" in fix_request,
             "missing beat caption caught": "beat_captions.beat3" in fix_request,
+            "story title must lead with a number": "story title: One shot to save the zone" in fix_request,
+            "profanity rejected": "title: One shot to save the zone. Carajo." in fix_request
+                                  and fix_request.count("banned word") >= 2,
             "asked once for a fix": len(calls) == 2,
             "clean draft passes": "ALL CHECKS PASSED" in out,
             "captioned plan passes the plan check": "plan check PASSES" in out,
