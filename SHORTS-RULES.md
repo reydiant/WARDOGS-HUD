@@ -1,4 +1,4 @@
-# WARDOGS Shorts rules (v2)
+# WARDOGS Shorts rules (v3)
 
 These are the standing rules for every WARDOGS YouTube Short. They come before the hook-title and QC skills. Update this file when the stats say a rule is wrong, and record why in the changelog at the bottom.
 
@@ -6,25 +6,26 @@ These are the standing rules for every WARDOGS YouTube Short. They come before t
 
 The last Short was fast kills with a money counter and almost no editing. Only **25% stayed to watch**, so 3 in 4 viewers swiped away in the first second or two. Counting money only means something to people who already play. A stranger needs a reason to care before the first kill lands.
 
-## Rule 1: 40 seconds is the hard limit
+## Rule 1: 40 seconds, told as a one-life story
 
-Plan the whole Short against this timeline. Every second needs a job.
+The owner picked the niche on 2026-11-14: **one-life story**. Each Short follows one match as a short story. The best watch time so far came from "10k one life" (0:37 long, 55% stayed, 59% average watched).
 
-| Time | Job | What goes on screen |
+| Time | Part | What's on screen |
 |---|---|---|
-| 0.0–1.5 s | **Hook.** Stop the swipe. | Open on the strongest frame: the payoff kill, the near-death or the enemy in the scope. No intro card, logo, name or menu. Hook text of 6 words or fewer from the first frame. |
-| 1.5–5 s | **Stakes.** Why should I care? | One line saying what's at risk: "This guy killed me 4 times", "Last one alive, enemy at 95". |
-| 5–30 s | **Escalation.** Keep it moving. | Each beat is 4 s or less. Cut every run, loot, menu and respawn. Something changes on screen at least every 2 s: a cut, a zoom, a text pop or a sound hit. |
-| 30–38 s | **Payoff.** | The moment the hook promised: slow-mo or freeze on the kill, punch-in zoom, the big number or line. |
-| 38–40 s | **Loop.** | Cut straight back so the last frame flows into the first. No end card, stats card or "subscribe" outro. Loops count as rewatches. |
+| 0–2 s | **Hook** | Frame one is a kill landing, with a story line ("ONE LIFE. NO ARMOR."). No intro or title card. |
+| 2–8 s | **Setup** | The plan or the constraint, in a few words. Nothing the footage doesn't show. |
+| 8–30 s | **Rising beats** | 3 or 4 moments in match order. Each has a build-up, the kill and a reaction, and each gets a different edit (freeze-rewind, speed ramp, kinetic text, a hold on the empty moment before a kill). |
+| about 25–32 s | **Risky call** | The one decision or shot the story turns on. |
+| 32–38 s | **Payoff** | The best kill, in short slow-mo. |
+| last 1.5 s | **End card** | @crazynando, twitch /reydiant and a one-line "Next:" teaser. No subscribe ask. Blend it into frame one so the replay loops. |
 
-If the footage doesn't fill 40 seconds with good beats, make it shorter. A tight 25-second Short beats a padded 40-second one.
+The tool for this is `shorts-toolkit/lesson06-one-life-story` on the `shorts-homework` branch. Its checker fails any plan that breaks these timings or the facts rules. If the footage can't fill 40 seconds with good beats, make it shorter.
 
 ## Rule 2: Every Short needs a story, and money is only a prop
 
 Pick the angle before cutting. Money, K/D and kill counts can sit small in a corner, but they're never the story.
 
-Angles, in the order to try them (the HUD already has the data for each):
+The one-life story is the main format now. These angles can be the stakes inside a one-life story, or the other formats in the rotation (the HUD already has the data for each):
 
 1. **Nemesis / revenge.** The HUD's Rivals list shows who keeps killing you. "This player killed me 5 times. Watch." Open on the revenge kill, then show the deaths that set it up. It's a series format ("Nemesis #1, #2…") and it gives people a reason to come back for the next one.
 2. **Clutch at match point.** The team score hits 95 and you're the last one on the zone. The score box shows the stakes on screen.
@@ -83,4 +84,5 @@ Before building any Short:
 
 ## Changelog
 
+- **v3 (2026-11-14):** The owner chose one-life story as the niche. Rule 1 is now its timeline, with a 1.5 s end card (handles and a "Next:" teaser) instead of no end card. Built in lesson 6 of the shorts toolkit.
 - **v2 (2026-11-14):** 40 s limit with a timeline per second. Money counting and plain kill compilations retired in favour of story angles (Nemesis first). Added editing minimums and a stats loop with targets. Reason: the money-counter Short with fast kills got 25% stayed-to-watch.
